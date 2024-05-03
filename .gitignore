@@ -53,6 +53,7 @@ dkms.conf
 
 # Clangd
 .clangd
+.clang-format
 
 # uv2csolution
 uv2csolution.log

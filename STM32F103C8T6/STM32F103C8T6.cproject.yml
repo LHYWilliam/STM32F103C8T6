@@ -1,10 +1,24 @@
 # A project translates into one executable or library.
 project:
-
   groups:
-    - group: Source Files
+    - group: user
       files:
         - file: ./main.c
+
+    - group: hardware
+      files:
+        - file: ./hardware/oled.h
+        - file: ./hardware/oled.c
+        - file: hardware/key.h
+        - file: hardware/key.c
+        - file: hardware/led.h
+        - file: hardware/led.c
+        - file: hardware/oled_font.h
+
+    - group: util
+      files:
+        - file: ./util/delay.c
+        - file: util/delay.h
 
   # List components to use for your application.
   # A software component is a re-usable unit that may be configurable.
