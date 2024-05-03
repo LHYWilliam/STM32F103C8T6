@@ -1,9 +1,9 @@
+#include "stm32f10x.h"
 #include "stm32f10x_gpio.h"
 #include "stm32f10x_rcc.h"
 
 #include "key.h"
 #include "led.h"
-#include "oled.h"
 
 int main() {
     LED_Init(RCC_APB2Periph_GPIOA, GPIOA, GPIO_Pin_0, GPIO_Speed_50MHz,

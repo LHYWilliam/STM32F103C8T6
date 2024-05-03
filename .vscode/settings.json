@@ -4,7 +4,8 @@
             "path": "STM32F103C8T6.csolution.yml",
             "target": "STM32F103C8",
             "config": {
-                "run": "Flash Device"
+                "run": "Flash Device",
+                "debug": "Arm Debugger"
             }
         }
     ]
