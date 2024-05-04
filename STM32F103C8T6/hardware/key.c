@@ -4,11 +4,11 @@
 #include "delay.h"
 #include "key.h"
 
-void Key_Init(uint32_t RCC_APB2Periph, Key *key, GPIOSpeed_TypeDef GPIO_Speed,
-              GPIOMode_TypeDef GPIO_Mode) {
+void Key_Init(uint32_t RCC_APB2Periph, Key *key) {
     RCC_APB2PeriphClockCmd(RCC_APB2Periph, ENABLE);
 
-    GPIO_InitTypeDef GPIO_InitStruct = {key->GPIO_Pin, GPIO_Speed, GPIO_Mode};
+    GPIO_InitTypeDef GPIO_InitStruct = {key->GPIO_Pin, GPIO_Speed_50MHz,
+                                        GPIO_Mode_IPU};
     GPIO_Init(key->GPIOx, &GPIO_InitStruct);
 }
 

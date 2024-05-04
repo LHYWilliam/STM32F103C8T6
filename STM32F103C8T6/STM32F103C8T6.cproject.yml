@@ -14,6 +14,8 @@ project:
         - file: hardware/led.h
         - file: hardware/led.c
         - file: hardware/oled_font.h
+        - file: hardware/buzzer.h
+        - file: hardware/buzzer.c
 
     - group: util
       files:
