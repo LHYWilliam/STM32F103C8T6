@@ -6,14 +6,15 @@
 #include "led.h"
 
 int main() {
-    LED_Init(RCC_APB2Periph_GPIOA, GPIOA, GPIO_Pin_0, GPIO_Speed_50MHz,
-             GPIO_Mode_Out_PP);
-    Key_Init(RCC_APB2Periph_GPIOB, GPIOB, GPIO_Pin_11, GPIO_Speed_50MHz,
-             GPIO_Mode_IPU);
+    LED led = {GPIOA, GPIO_Pin_0, HIGH};
+    LED_Init(RCC_APB2Periph_GPIOA, &led, GPIO_Speed_50MHz, GPIO_Mode_Out_PP);
+
+    Key key = {GPIOB, GPIO_Pin_11, LOW};
+    Key_Init(RCC_APB2Periph_GPIOB, &key, GPIO_Speed_50MHz, GPIO_Mode_IPU);
 
     for (;;) {
-        if (Key_Read(GPIOB, GPIO_Pin_11, 0)) {
-            LED_Turn(GPIOA, GPIO_Pin_0);
+        if (Key_Read(&key)) {
+            LED_Turn(&led);
         }
     }
 }

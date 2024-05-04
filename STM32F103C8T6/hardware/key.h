@@ -2,10 +2,20 @@
 #define __KEY_H
 
 #include "stm32f10x.h"
+#include "stm32f10x_gpio.h"
 
-void Key_Init(uint32_t RCC_APB2Periph, GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin,
-              GPIOSpeed_TypeDef GPIO_Speed, GPIOMode_TypeDef GPIO_Mode);
+#define LOW ((uint8_t)0)
+#define HIGH ((uint8_t)1)
 
-uint8_t Key_Read(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin, uint8_t Mode);
+typedef struct {
+    GPIO_TypeDef *GPIOx;
+    uint16_t GPIO_Pin;
+    uint8_t Mode;
+} Key;
+
+void Key_Init(uint32_t RCC_APB2Periph, Key *key, GPIOSpeed_TypeDef GPIO_Speed,
+              GPIOMode_TypeDef GPIO_Mode);
+
+uint8_t Key_Read(Key *key);
 
 #endif
