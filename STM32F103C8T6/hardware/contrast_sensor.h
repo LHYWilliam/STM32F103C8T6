@@ -13,8 +13,21 @@ typedef struct {
     uint8_t Mode;
 } ContrastSensor;
 
+typedef struct {
+    uint8_t GPIO_PortSource;
+    uint8_t GPIO_PinSource;
+    uint32_t EXTI_Line;
+    EXTITrigger_TypeDef EXTI_Trigger;
+    uint8_t NVIC_IRQChannel;
+    uint32_t NVIC_PriorityGroup;
+    uint8_t NVIC_IRQChannelPreemptionPriority;
+    uint8_t NVIC_IRQChannelSubPriority;
+
+} EXIT_Interrut;
+
 void ContrastSensor_Init(uint32_t RCC_APB2Periph,
-                         ContrastSensor *contrast_sensor);
+                         ContrastSensor *contrast_sensor,
+                         EXIT_Interrut *interrupt);
 uint16_t ContrastSensor_Get();
 
 #endif
