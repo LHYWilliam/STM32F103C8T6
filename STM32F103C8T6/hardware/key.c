@@ -1,11 +1,12 @@
 #include "stm32f10x.h"
 #include "stm32f10x_gpio.h"
+#include "stm32f10x_rcc.h"
 
 #include "delay.h"
 #include "key.h"
 
-void Key_Init(uint32_t RCC_APB2Periph, Key *key) {
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph, ENABLE);
+void Key_Init(Key *key) {
+    RCC_APB2PeriphClockCmd(key->RCC_APB2Periph, ENABLE);
 
     GPIO_InitTypeDef GPIO_InitStruct = {
         key->GPIO_Pin,

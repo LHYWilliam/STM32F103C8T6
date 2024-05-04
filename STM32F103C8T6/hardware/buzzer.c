@@ -4,8 +4,8 @@
 
 #include "buzzer.h"
 
-void Buzzer_Init(uint32_t RCC_APB2Periph, Buzzer *buzzer) {
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph, ENABLE);
+void Buzzer_Init(Buzzer *buzzer) {
+    RCC_APB2PeriphClockCmd(buzzer->RCC_APB2Periph, ENABLE);
 
     GPIO_InitTypeDef GPIO_InitStruct = {
         buzzer->GPIO_Pin,

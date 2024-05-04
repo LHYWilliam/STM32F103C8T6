@@ -7,12 +7,13 @@
 #define HIGH ((uint8_t)1)
 
 typedef struct {
+    uint32_t RCC_APB2Periph;
     GPIO_TypeDef *GPIOx;
     uint16_t GPIO_Pin;
     uint8_t Mode;
 } Key;
 
-void Key_Init(uint32_t RCC_APB2Periph, Key *key);
+void Key_Init(Key *key);
 uint8_t Key_Read(Key *key);
 
 #endif

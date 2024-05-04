@@ -7,12 +7,13 @@
 #define HIGH ((uint8_t)1)
 
 typedef struct {
+    uint32_t RCC_APB2Periph;
     GPIO_TypeDef *GPIOx;
     uint16_t GPIO_Pin;
     uint8_t Mode;
 } Buzzer;
 
-void Buzzer_Init(uint32_t RCC_APB2Periph, Buzzer *buzzer);
+void Buzzer_Init(Buzzer *buzzer);
 void Buzzer_On(Buzzer *buzzer);
 void Buzzer_Off(Buzzer *buzzer);
 void Buzzer_Turn(Buzzer *buzzer);

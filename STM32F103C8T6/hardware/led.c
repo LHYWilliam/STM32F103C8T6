@@ -4,8 +4,8 @@
 
 #include "led.h"
 
-void LED_Init(uint32_t RCC_APB2Periph, LED *led) {
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph, ENABLE);
+void LED_Init(LED *led) {
+    RCC_APB2PeriphClockCmd(led->RCC_APB2Periph, ENABLE);
 
     GPIO_InitTypeDef GPIO_InitStruct = {
         led->GPIO_Pin,
