@@ -7,8 +7,11 @@
 void LED_Init(uint32_t RCC_APB2Periph, LED *led) {
     RCC_APB2PeriphClockCmd(RCC_APB2Periph, ENABLE);
 
-    GPIO_InitTypeDef GPIO_InitStruct = {led->GPIO_Pin, GPIO_Speed_50MHz,
-                                        GPIO_Mode_Out_PP};
+    GPIO_InitTypeDef GPIO_InitStruct = {
+        led->GPIO_Pin,
+        GPIO_Speed_50MHz,
+        GPIO_Mode_Out_PP,
+    };
     GPIO_Init(led->GPIOx, &GPIO_InitStruct);
 }
 

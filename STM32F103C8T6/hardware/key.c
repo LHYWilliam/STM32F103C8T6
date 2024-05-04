@@ -7,8 +7,11 @@
 void Key_Init(uint32_t RCC_APB2Periph, Key *key) {
     RCC_APB2PeriphClockCmd(RCC_APB2Periph, ENABLE);
 
-    GPIO_InitTypeDef GPIO_InitStruct = {key->GPIO_Pin, GPIO_Speed_50MHz,
-                                        GPIO_Mode_IPU};
+    GPIO_InitTypeDef GPIO_InitStruct = {
+        key->GPIO_Pin,
+        GPIO_Speed_50MHz,
+        GPIO_Mode_IPU,
+    };
     GPIO_Init(key->GPIOx, &GPIO_InitStruct);
 }
 

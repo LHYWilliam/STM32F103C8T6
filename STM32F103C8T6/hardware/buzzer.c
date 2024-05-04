@@ -7,8 +7,11 @@
 void Buzzer_Init(uint32_t RCC_APB2Periph, Buzzer *buzzer) {
     RCC_APB2PeriphClockCmd(RCC_APB2Periph, ENABLE);
 
-    GPIO_InitTypeDef GPIO_InitStruct = {buzzer->GPIO_Pin, GPIO_Speed_50MHz,
-                                        GPIO_Mode_Out_PP};
+    GPIO_InitTypeDef GPIO_InitStruct = {
+        buzzer->GPIO_Pin,
+        GPIO_Speed_50MHz,
+        GPIO_Mode_Out_PP,
+    };
     GPIO_Init(buzzer->GPIOx, &GPIO_InitStruct);
 }
 

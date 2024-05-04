@@ -8,8 +8,11 @@
 void LightSensor_Init(uint32_t RCC_APB2Periph, LightSensor *light_sensor) {
     RCC_APB2PeriphClockCmd(RCC_APB2Periph, ENABLE);
 
-    GPIO_InitTypeDef GPIO_InitStruct = {light_sensor->GPIO_Pin,
-                                        GPIO_Speed_50MHz, GPIO_Mode_IPU};
+    GPIO_InitTypeDef GPIO_InitStruct = {
+        light_sensor->GPIO_Pin,
+        GPIO_Speed_50MHz,
+        GPIO_Mode_IPU,
+    };
     GPIO_Init(light_sensor->GPIOx, &GPIO_InitStruct);
 }
 

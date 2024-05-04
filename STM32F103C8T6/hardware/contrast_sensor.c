@@ -9,7 +9,7 @@ uint16_t counter;
 
 void ContrastSensor_Init(uint32_t RCC_APB2Periph,
                          ContrastSensor *contrast_sensor,
-                         EXIT_Interrut *interrupt) {
+                         GPIO_EXIT_Interrut *interrupt) {
     RCC_APB2PeriphClockCmd(RCC_APB2Periph, ENABLE);
 
     GPIO_InitTypeDef GPIO_InitStruct = {

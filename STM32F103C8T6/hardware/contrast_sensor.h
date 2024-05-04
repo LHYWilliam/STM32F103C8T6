@@ -3,10 +3,6 @@
 
 #include "stm32f10x.h"
 
-#define DOWN (uint8_t(0))
-#define UP (uint8_t(1))
-#define DOWN_UP (uint8_t(1))
-
 typedef struct {
     GPIO_TypeDef *GPIOx;
     uint16_t GPIO_Pin;
@@ -23,11 +19,11 @@ typedef struct {
     uint8_t NVIC_IRQChannelPreemptionPriority;
     uint8_t NVIC_IRQChannelSubPriority;
 
-} EXIT_Interrut;
+} GPIO_EXIT_Interrut;
 
 void ContrastSensor_Init(uint32_t RCC_APB2Periph,
                          ContrastSensor *contrast_sensor,
-                         EXIT_Interrut *interrupt);
+                         GPIO_EXIT_Interrut *interrupt);
 uint16_t ContrastSensor_Get();
 
 #endif

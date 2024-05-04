@@ -24,14 +24,16 @@ int main() {
         GPIOB,
         GPIO_Pin_13,
     };
-    EXIT_Interrut interrupt = {GPIO_PortSourceGPIOB,
-                               GPIO_PinSource13,
-                               EXTI_Line13,
-                               EXTI_Trigger_Falling,
-                               EXTI15_10_IRQn,
-                               NVIC_PriorityGroup_2,
-                               1,
-                               1};
+    GPIO_EXIT_Interrut interrupt = {
+        GPIO_PortSourceGPIOB,
+        GPIO_PinSource13,
+        EXTI_Line13,
+        EXTI_Trigger_Falling,
+        EXTI15_10_IRQn,
+        NVIC_PriorityGroup_2,
+        1,
+        1,
+    };
     ContrastSensor_Init(RCC_APB2Periph_GPIOB, &sensor, &interrupt);
 
     for (;;) {
