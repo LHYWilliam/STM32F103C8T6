@@ -7,8 +7,8 @@ project:
 
     - group: hardware
       files:
-        - file: ./hardware/oled.h
-        - file: ./hardware/oled.c
+        - file: hardware/oled.h
+        - file: hardware/oled.c
         - file: hardware/key.h
         - file: hardware/key.c
         - file: hardware/led.h
@@ -20,12 +20,14 @@ project:
         - file: hardware/light_sensor.c
         - file: hardware/contrast_sensor.h
         - file: hardware/contrast_sensor.c
+        - file: hardware/tim.h
+        - file: hardware/tim.c
         - file: hardware/pwm.h
         - file: hardware/pwm.c
 
     - group: util
       files:
-        - file: ./util/delay.c
+        - file: util/delay.c
         - file: util/delay.h
         - file: util/interrupt.h
         - file: util/interrupt.c
