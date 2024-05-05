@@ -1,4 +1,3 @@
-#include "misc.h"
 #include "stm32f10x.h"
 #include "stm32f10x_exti.h"
 #include "stm32f10x_gpio.h"
@@ -19,6 +18,13 @@ void EXTI15_10_IRQHandler(void) {
     }
 }
 
+void TIM2_IRQHandler(void) {
+    if (TIM_GetITStatus(TIM2, TIM_IT_Update) == SET) {
+        counter++;
+        TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
+    }
+}
+
 int main() {
     OLED_Init();
 
@@ -34,27 +40,29 @@ int main() {
     // };
     // GPIO_Interrut_Init(&interrupt);
 
+    TIMClock_Config config = {
+        RCC_APB2Periph_GPIOA,
+        GPIOA,
+        GPIO_Pin_0,
+        GPIO_Mode_IPU,
+        TIM_ExtTRGPSC_OFF,
+        TIM_ExtTRGPolarity_NonInverted,
+        0x0f,
+    };
     TIM_Interrupt interrupt = {
         RCC_APB1Periph_TIM2,
         TIM2,
-        TIM_InternalClockConfig,
-        1000,
+        TIM_ETRClockMode,
+        1,
+        10,
         TIM2_IRQn,
         NVIC_PriorityGroup_2,
         1,
         1,
     };
-    TIM_Interrupt_Init(&interrupt);
+    TIM_Interrupt_Init(&interrupt, &config);
 
     for (;;) {
-        OLED_ShowNum(1, 1, counter, 3);
-    }
-}
-
-void TIM2_IRQHandler(void) {
-    if (TIM_GetITStatus(TIM2, TIM_IT_Update) == SET) {
-        counter++;
-
-        TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
+        OLED_ShowNum(1, 1, TIM_GetCounter(TIM2), 3);
     }
 }

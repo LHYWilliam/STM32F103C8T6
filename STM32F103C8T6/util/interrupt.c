@@ -1,5 +1,5 @@
-#include "misc.h"
 #include "stm32f10x.h"
+#include "stm32f10x_gpio.h"
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_tim.h"
 
@@ -27,15 +27,15 @@ void GPIO_Interrut_Init(GPIO_Interrut *interrupt) {
     NVIC_Init(&NVIC_InitStruct);
 }
 
-void TIM_Interrupt_Init(TIM_Interrupt *interrupt) {
+void TIM_Interrupt_Init(TIM_Interrupt *interrupt, TIMClock_Config *config) {
     RCC_APB1PeriphClockCmd(interrupt->RCC_APB1Periph, ENABLE);
 
-    interrupt->TIM_Source(interrupt->TIMx);
+    interrupt->TIMClock_Source(interrupt->TIMx, config);
 
     TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStruct = {
-        7200 - 1,
+        interrupt->TIM_Prescaler - 1,
         TIM_CounterMode_Up,
-        interrupt->duration * 10 - 1,
+        interrupt->TIM_Period - 1,
         TIM_CKD_DIV1,
         0,
     };
@@ -57,3 +57,20 @@ void TIM_Interrupt_Init(TIM_Interrupt *interrupt) {
 
     TIM_Cmd(interrupt->TIMx, ENABLE);
 }
+
+void TIM_InternalClock(TIM_TypeDef *TIMx, TIMClock_Config *config) {
+    TIM_InternalClockConfig(TIMx);
+}
+void TIM_ETRClockMode(TIM_TypeDef *TIMx, TIMClock_Config *config) {
+    RCC_APB2PeriphClockCmd(config->RCC_APB2Periph, ENABLE);
+
+    GPIO_InitTypeDef GPIO_InitStruct = {
+        config->GPIO_Pin,
+        GPIO_Speed_50MHz,
+        config->GPIO_Mode,
+    };
+    GPIO_Init(config->GPIOx, &GPIO_InitStruct);
+
+    TIM_ETRClockMode2Config(TIMx, config->TIM_ExtTRGPrescaler,
+                            config->TIM_ExtTRGPolarity, config->ExtTRGFilter);
+};
