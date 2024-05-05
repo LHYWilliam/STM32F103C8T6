@@ -20,6 +20,8 @@ project:
         - file: hardware/light_sensor.c
         - file: hardware/contrast_sensor.h
         - file: hardware/contrast_sensor.c
+        - file: hardware/pwm.h
+        - file: hardware/pwm.c
 
     - group: util
       files:

@@ -65,3 +65,4 @@ out
 *.cbuild.yml
 *.cbuild-idx.yml
 *.cbuild-set.yml
+sample.c

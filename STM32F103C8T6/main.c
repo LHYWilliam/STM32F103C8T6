@@ -1,68 +1,24 @@
 #include "stm32f10x.h"
-#include "stm32f10x_exti.h"
-#include "stm32f10x_gpio.h"
-#include "stm32f10x_rcc.h"
 #include "stm32f10x_tim.h"
 
-#include "interrupt.h"
+#include "delay.h"
 #include "oled.h"
-
-uint16_t counter;
-
-void EXTI15_10_IRQHandler(void) {
-    if (EXTI_GetITStatus(EXTI_Line12) == SET) {
-        if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_12)) {
-            counter++;
-        }
-        EXTI_ClearITPendingBit(EXTI_Line12);
-    }
-}
-
-void TIM2_IRQHandler(void) {
-    if (TIM_GetITStatus(TIM2, TIM_IT_Update) == SET) {
-        counter++;
-        TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
-    }
-}
+#include "pwm.h"
 
 int main() {
     OLED_Init();
-
-    // GPIO_Interrut interrupt = {
-    //     GPIO_PortSourceGPIOB,
-    //     GPIO_PinSource12,
-    //     EXTI_Line12,
-    //     EXTI_Trigger_Falling,
-    //     EXTI15_10_IRQn,
-    //     NVIC_PriorityGroup_2,
-    //     1,
-    //     1,
-    // };
-    // GPIO_Interrut_Init(&interrupt);
-
-    TIMClock_Config config = {
-        RCC_APB2Periph_GPIOA,
-        GPIOA,
-        GPIO_Pin_0,
-        GPIO_Mode_IPU,
-        TIM_ExtTRGPSC_OFF,
-        TIM_ExtTRGPolarity_NonInverted,
-        0x0f,
-    };
-    TIM_Interrupt interrupt = {
-        RCC_APB1Periph_TIM2,
-        TIM2,
-        TIM_ETRClockMode,
-        1,
-        10,
-        TIM2_IRQn,
-        NVIC_PriorityGroup_2,
-        1,
-        1,
-    };
-    TIM_Interrupt_Init(&interrupt, &config);
+    PWM_Init();
 
     for (;;) {
-        OLED_ShowNum(1, 1, TIM_GetCounter(TIM2), 3);
+        for (int i = 0; i <= 100; i++) {
+            TIM_SetCompare1(TIM2, i);
+            Delay_ms(10);
+            OLED_ShowNum(1, 1, TIM_GetCapture1(TIM2), 3);
+        }
+        for (int i = 0; i <= 100; i++) {
+            TIM_SetCompare1(TIM2, 100 - i);
+            Delay_ms(10);
+            OLED_ShowNum(1, 1, TIM_GetCapture1(TIM2), 3);
+        }
     }
 }

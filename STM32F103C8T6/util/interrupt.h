@@ -41,6 +41,6 @@ void GPIO_Interrut_Init(GPIO_Interrut *interrupt);
 
 void TIM_Interrupt_Init(TIM_Interrupt *interrupt, TIMClock_Config *config);
 void TIM_InternalClock(TIM_TypeDef *TIMx, TIMClock_Config *config);
-void TIM_ETRClockMode(TIM_TypeDef *TIMx, TIMClock_Config *config);
+void TIM_ETRClockMode2(TIM_TypeDef *TIMx, TIMClock_Config *config);
 
 #endif

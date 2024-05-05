@@ -61,7 +61,7 @@ void TIM_Interrupt_Init(TIM_Interrupt *interrupt, TIMClock_Config *config) {
 void TIM_InternalClock(TIM_TypeDef *TIMx, TIMClock_Config *config) {
     TIM_InternalClockConfig(TIMx);
 }
-void TIM_ETRClockMode(TIM_TypeDef *TIMx, TIMClock_Config *config) {
+void TIM_ETRClockMode2(TIM_TypeDef *TIMx, TIMClock_Config *config) {
     RCC_APB2PeriphClockCmd(config->RCC_APB2Periph, ENABLE);
 
     GPIO_InitTypeDef GPIO_InitStruct = {
