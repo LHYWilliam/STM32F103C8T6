@@ -28,6 +28,8 @@ project:
         - file: hardware/gpio.c
         - file: hardware/servo.h
         - file: hardware/servo.c
+        - file: hardware/motor.h
+        - file: hardware/motor.c
 
     - group: util
       files:

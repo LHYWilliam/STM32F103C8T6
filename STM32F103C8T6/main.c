@@ -3,33 +3,17 @@
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_tim.h"
 
+#include "delay.h"
 #include "gpio.h"
-#include "key.h"
-#include "oled.h"
+#include "motor.h"
 #include "pwm.h"
-#include "servo.h"
 #include "tim.h"
 
 uint16_t counter;
 
 int main() {
-    OLED_Init();
-
-    GPIO gpioB1 = {
-        RCC_APB2Periph_GPIOB,
-        GPIOB,
-        GPIO_Pin_1,
-        GPIO_Mode_IPU,
-    };
-    GPIO_Init_(&gpioB1);
-    Key key = {
-        &gpioB1,
-        LOW,
-    };
-    Key_Init(&key);
-
     TIM tim = {
-        RCC_APB1Periph_TIM2, TIM2, TIM_InternalClock, 72 - 1, 20000 - 1,
+        RCC_APB1Periph_TIM2, TIM2, TIM_InternalClock, 720 - 1, 100 - 1,
     };
     PWM pwm = {
         TIM2,
@@ -37,27 +21,37 @@ int main() {
         TIM_OC1Init,
         TIM_SetCompare1,
     };
-    GPIO gpioA0 = {
+    GPIO gpio_pwm = {
         RCC_APB2Periph_GPIOA,
         GPIOA,
         GPIO_Pin_0,
         GPIO_Mode_AF_PP,
     };
-    Servo servo = {
-        &tim,
-        &pwm,
-        &gpioA0,
+    GPIO gpio_direction1 = {
+        RCC_APB2Periph_GPIOA,
+        GPIOA,
+        GPIO_Pin_1,
+        GPIO_Mode_Out_PP,
     };
-    Servo_Init(&servo);
+    GPIO gpio_direction2 = {
+        RCC_APB2Periph_GPIOA,
+        GPIOA,
+        GPIO_Pin_2,
+        GPIO_Mode_Out_PP,
+    };
+    Motor motor = {
+        &tim, &pwm, &gpio_pwm, &gpio_direction1, &gpio_direction2,
+    };
+    Motor_Init(&motor);
 
-    float angel = 0;
     for (;;) {
-        if (Key_Read(&key)) {
-            Servo_Set(&servo, angel);
-            angel += 30;
-            if (angel > 180) {
-                angel = 0;
-            }
+        for (int i = 0; i <= 100; i++) {
+            Motor_SetSpeed(&motor, i);
+            Delay_ms(10);
+        }
+        for (int i = 0; i <= 100; i++) {
+            Motor_SetSpeed(&motor, 100 - i);
+            Delay_ms(10);
         }
     }
 }
