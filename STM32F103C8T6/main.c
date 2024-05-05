@@ -3,12 +3,11 @@
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_tim.h"
 
-#include <stdlib.h>
-
-#include "delay.h"
 #include "gpio.h"
+#include "key.h"
 #include "oled.h"
 #include "pwm.h"
+#include "servo.h"
 #include "tim.h"
 
 uint16_t counter;
@@ -16,36 +15,51 @@ uint16_t counter;
 int main() {
     OLED_Init();
 
-    TIM tim = {
-        RCC_APB1Periph_TIM2, TIM2, TIM_InternalClock, 720, 100,
+    GPIO gpio1 = {
+        RCC_APB2Periph_GPIOB,
+        GPIOB,
+        GPIO_Pin_1,
+        GPIO_Mode_IPU,
     };
-    TIM_Init(&tim, NULL);
+    GPIO_Init_(&gpio1);
+    Key key = {
+        GPIOB,
+        GPIO_Pin_1,
+        LOW,
+    };
+    Key_Init(&key);
 
+    TIM tim = {
+        RCC_APB1Periph_TIM2, TIM2, TIM_InternalClock, 72 - 1, 20000 - 1,
+    };
     PWM pwm = {
         TIM2,
         0,
         TIM_OC1Init,
+        TIM_SetCompare1,
     };
-    PWM_Init(&pwm);
-
-    GPIO gpio = {
+    GPIO gpio2 = {
         RCC_APB2Periph_GPIOA,
         GPIOA,
         GPIO_Pin_0,
         GPIO_Mode_AF_PP,
     };
-    GPIO_Init_(&gpio);
+    Servo servo = {
+        &tim,
+        &pwm,
+        &gpio2,
+    };
 
+    Servo_Init(&servo);
+
+    float angel = 0;
     for (;;) {
-        for (int i = 0; i <= 100; i++) {
-            TIM_SetCompare1(TIM2, i);
-            Delay_ms(10);
-            OLED_ShowNum(1, 1, TIM_GetCapture1(TIM2), 3);
-        }
-        for (int i = 0; i <= 100; i++) {
-            TIM_SetCompare1(TIM2, 100 - i);
-            Delay_ms(10);
-            OLED_ShowNum(1, 1, TIM_GetCapture1(TIM2), 3);
+        if (Key_Read(&key)) {
+            Servo_Set(&servo, angel);
+            angel += 30;
+            if (angel > 180) {
+                angel = 0;
+            }
         }
     }
 }

@@ -26,6 +26,8 @@ project:
         - file: hardware/pwm.c
         - file: hardware/gpio.h
         - file: hardware/gpio.c
+        - file: hardware/servo.h
+        - file: hardware/servo.c
 
     - group: util
       files:

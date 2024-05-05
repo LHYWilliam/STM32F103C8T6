@@ -8,9 +8,9 @@ void TIM_Init(TIM *tim, ClockSource_Config *config) {
     tim->TIM_ClockSource(tim->TIMx, config);
 
     TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStruct = {
-        tim->TIM_Prescaler - 1,
+        tim->TIM_Prescaler,
         TIM_CounterMode_Up,
-        tim->TIM_Period - 1,
+        tim->TIM_Period,
         TIM_CKD_DIV1,
         0,
     };
