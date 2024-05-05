@@ -15,16 +15,15 @@ uint16_t counter;
 int main() {
     OLED_Init();
 
-    GPIO gpio1 = {
+    GPIO gpioB1 = {
         RCC_APB2Periph_GPIOB,
         GPIOB,
         GPIO_Pin_1,
         GPIO_Mode_IPU,
     };
-    GPIO_Init_(&gpio1);
+    GPIO_Init_(&gpioB1);
     Key key = {
-        GPIOB,
-        GPIO_Pin_1,
+        &gpioB1,
         LOW,
     };
     Key_Init(&key);
@@ -38,7 +37,7 @@ int main() {
         TIM_OC1Init,
         TIM_SetCompare1,
     };
-    GPIO gpio2 = {
+    GPIO gpioA0 = {
         RCC_APB2Periph_GPIOA,
         GPIOA,
         GPIO_Pin_0,
@@ -47,9 +46,8 @@ int main() {
     Servo servo = {
         &tim,
         &pwm,
-        &gpio2,
+        &gpioA0,
     };
-
     Servo_Init(&servo);
 
     float angel = 0;

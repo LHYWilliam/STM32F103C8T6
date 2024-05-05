@@ -1,11 +1,10 @@
 #ifndef __CONTRAST_SENSOR_H
 #define __CONTRAST_SENSOR_H
 
-#include "stm32f10x.h"
+#include "gpio.h"
 
 typedef struct {
-    GPIO_TypeDef *GPIOx;
-    uint16_t GPIO_Pin;
+    GPIO *gpio;
     uint8_t Mode;
 } ContrastSensor;
 

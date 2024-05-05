@@ -1,11 +1,11 @@
+#include "gpio.h"
 #include "stm32f10x_gpio.h"
-#include <stdint.h>
 
 #include "light_sensor.h"
 
-void LightSensor_Init(LightSensor *sensor) {}
+void LightSensor_Init(LightSensor *sensor) { GPIO_Init_(sensor->gpio); }
 
 uint8_t LightSensor_Get(LightSensor *sensor) {
-    return GPIO_ReadInputDataBit(sensor->GPIOx, sensor->GPIO_Pin) ==
+    return GPIO_ReadInputDataBit(sensor->gpio->GPIOx, sensor->gpio->GPIO_Pin) ==
            sensor->Mode;
 }

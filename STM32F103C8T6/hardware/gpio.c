@@ -10,7 +10,7 @@ void GPIO_Init_(GPIO *gpio) {
     GPIO_InitTypeDef GPIO_InitStruct = {
         gpio->GPIO_Pin,
         GPIO_Speed_50MHz,
-        gpio->Mode,
+        gpio->GPIO_Mode,
     };
     GPIO_Init(gpio->GPIOx, &GPIO_InitStruct);
 }

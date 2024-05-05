@@ -8,7 +8,7 @@
 typedef struct {
     TIM *tim;
     PWM *pwm;
-    GPIO *gpio
+    GPIO *gpio;
 } Servo;
 
 void Servo_Init(Servo *servo);
