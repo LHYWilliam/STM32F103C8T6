@@ -1,19 +1,8 @@
-#include "stm32f10x.h"
 #include "stm32f10x_gpio.h"
-#include "stm32f10x_rcc.h"
 
 #include "led.h"
 
-void LED_Init(LED *led) {
-    RCC_APB2PeriphClockCmd(led->RCC_APB2Periph, ENABLE);
-
-    GPIO_InitTypeDef GPIO_InitStruct = {
-        led->GPIO_Pin,
-        GPIO_Speed_50MHz,
-        GPIO_Mode_Out_PP,
-    };
-    GPIO_Init(led->GPIOx, &GPIO_InitStruct);
-}
+void LED_Init(LED *led) {}
 
 void LED_On(LED *led) {
     GPIO_WriteBit(led->GPIOx, led->GPIO_Pin, (BitAction)(led->Mode));

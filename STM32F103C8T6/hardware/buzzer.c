@@ -1,19 +1,8 @@
-#include "stm32f10x.h"
 #include "stm32f10x_gpio.h"
-#include "stm32f10x_rcc.h"
 
 #include "buzzer.h"
 
-void Buzzer_Init(Buzzer *buzzer) {
-    RCC_APB2PeriphClockCmd(buzzer->RCC_APB2Periph, ENABLE);
-
-    GPIO_InitTypeDef GPIO_InitStruct = {
-        buzzer->GPIO_Pin,
-        GPIO_Speed_50MHz,
-        GPIO_Mode_Out_PP,
-    };
-    GPIO_Init(buzzer->GPIOx, &GPIO_InitStruct);
-}
+void Buzzer_Init(Buzzer *buzzer) {}
 
 void Buzzer_On(Buzzer *buzzer) {
     GPIO_WriteBit(buzzer->GPIOx, buzzer->GPIO_Pin, (BitAction)buzzer->Mode);

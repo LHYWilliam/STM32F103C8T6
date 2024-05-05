@@ -7,7 +7,6 @@
 #define HIGH ((uint8_t)1)
 
 typedef struct {
-    uint32_t RCC_APB2Periph;
     GPIO_TypeDef *GPIOx;
     uint16_t GPIO_Pin;
     uint8_t Mode;
