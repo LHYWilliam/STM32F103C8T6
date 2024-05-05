@@ -1,6 +1,8 @@
+#include "misc.h"
 #include "stm32f10x.h"
 #include "stm32f10x_exti.h"
 #include "stm32f10x_gpio.h"
+#include "stm32f10x_rcc.h"
 #include "stm32f10x_tim.h"
 
 #include "interrupt.h"
@@ -20,7 +22,7 @@ void EXTI15_10_IRQHandler(void) {
 int main() {
     OLED_Init();
 
-    // GPIO_EXTIInterrut interrupt = {
+    // GPIO_Interrut interrupt = {
     //     GPIO_PortSourceGPIOB,
     //     GPIO_PinSource12,
     //     EXTI_Line12,
@@ -30,9 +32,19 @@ int main() {
     //     1,
     //     1,
     // };
-    // GPIO_EXTIInterrut_Init(&interrupt);
+    // GPIO_Interrut_Init(&interrupt);
 
-    Timer_Interrupt_Init();
+    TIM_Interrupt interrupt = {
+        RCC_APB1Periph_TIM2,
+        TIM2,
+        TIM_InternalClockConfig,
+        1000,
+        TIM2_IRQn,
+        NVIC_PriorityGroup_2,
+        1,
+        1,
+    };
+    TIM_Interrupt_Init(&interrupt);
 
     for (;;) {
         OLED_ShowNum(1, 1, counter, 3);
