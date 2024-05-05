@@ -16,5 +16,6 @@ typedef struct {
 } GPIO_EXTIInterrut;
 
 void GPIO_EXTIInterrut_Init(GPIO_EXTIInterrut *interrupt);
+void Timer_Interrupt_Init();
 
 #endif
