@@ -15,6 +15,5 @@ void Motor_SetSpeed(Motor *motor, int8_t speed) {
     GPIO_WriteBit(motor->gpio_direction2->GPIOx,
                   motor->gpio_direction2->GPIO_Pin,
                   speed >= 0 ? Bit_RESET : Bit_SET);
-    motor->pwm->compare->TIM_SetCompare(motor->pwm->tim->TIMx,
-                                        speed >= 0 ? speed : -speed);
+    PWM_SetPulse(motor->pwm, speed >= 0 ? speed : -speed);
 }

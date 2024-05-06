@@ -12,6 +12,5 @@ typedef struct {
 } Compare;
 
 void Compare_Init(Compare *compare);
-void Compare_Set(Compare *compare, uint16_t);
 
 #endif

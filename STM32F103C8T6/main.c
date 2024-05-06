@@ -3,13 +3,13 @@
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_tim.h"
 
-#include <stdlib.h>
-
 #include "capture.h"
 #include "compare.h"
+#include "delay.h"
 #include "gpio.h"
 #include "oled.h"
 #include "pwm.h"
+#include "pwmi.h"
 #include "tim.h"
 
 uint16_t counter;
@@ -48,7 +48,7 @@ int main() {
     TIM tim3 = {
         RCC_APB1Periph_TIM3, TIM3, TIM_InternalClock, 72 - 1, 65536 - 1,
     };
-    Capture freq = {
+    Capture frequency = {
         TIM3, TIM_Channel_1,   TIM_ICPolarity_Rising, TIM_ICSelection_DirectTI,
         0xF,  TIM_GetCapture1,
     };
@@ -60,17 +60,20 @@ int main() {
         0xF,
         TIM_GetCapture2,
     };
+    PWMI pwmi = {
+        &gpio_capture,
+        &frequency,
+        &duty,
+        &tim3,
 
-    GPIO_Init_(&gpio_capture);
-    TIM_Init(&tim3, NULL);
-    Capture_Init(&freq);
-    Capture_Init(&duty);
+    };
+    PWMI_Init(&pwmi);
 
-    TIM_SelectInputTrigger(freq.TIMx, TIM_TS_TI1FP1);
-    TIM_SelectSlaveMode(freq.TIMx, TIM_SlaveMode_Reset);
+    PWM_SetPulse(&pwm, 80);
+    PWM_SetPrescaler(&pwm, 7200 - 1);
 
     for (;;) {
-        OLED_ShowNum(1, 1, Capture_GetFreq(&freq), 6);
-        OLED_ShowNum(2, 1, Capture_GetDuty(&freq, &duty), 3);
+        OLED_ShowNum(1, 1, PWMI_GetFrequency(&pwmi), 6);
+        OLED_ShowNum(2, 1, PWMI_GetDuty(&pwmi), 3);
     }
 }

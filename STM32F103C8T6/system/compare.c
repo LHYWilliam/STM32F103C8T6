@@ -11,7 +11,3 @@ void Compare_Init(Compare *compare) {
     };
     compare->TIM_OCInit(compare->TIMx, &TIM_OCInitStruct);
 }
-
-void Compare_Set(Compare *compare, uint16_t val) {
-    compare->TIM_SetCompare(compare->TIMx, val);
-}

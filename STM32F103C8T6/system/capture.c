@@ -9,12 +9,3 @@ void Capture_Init(Capture *capture) {
     };
     TIM_ICInit(capture->TIMx, &TIM_ICInitStruct);
 }
-
-uint16_t Capture_GetFreq(Capture *capture) {
-    return 1000000 / (capture->TIM_GetCapture(capture->TIMx) + 1);
-}
-
-uint16_t Capture_GetDuty(Capture *freq, Capture *duty) {
-    return (duty->TIM_GetCapture(duty->TIMx) + 1) * 100 /
-           (freq->TIM_GetCapture(freq->TIMx) + 1);
-}

@@ -3,7 +3,6 @@
 
 void Servo_Init(Servo *servo) { PWM_Init(servo->pwm); }
 
-void Servo_Set(Servo *servo, float angel) {
-    servo->pwm->compare->TIM_SetCompare(servo->pwm->tim->TIMx,
-                                        angel / 180 * 2000 + 500);
+void Servo_SetAngel(Servo *servo, float angel) {
+    PWM_SetPulse(servo->pwm, angel / 180 * 2000 + 500);
 }

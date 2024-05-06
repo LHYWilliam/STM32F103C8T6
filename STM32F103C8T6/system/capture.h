@@ -13,7 +13,5 @@ typedef struct {
 } Capture;
 
 void Capture_Init(Capture *capture);
-uint16_t Capture_GetFreq(Capture *capture);
-uint16_t Capture_GetDuty(Capture *freq, Capture *duty);
 
 #endif
