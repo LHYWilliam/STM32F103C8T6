@@ -15,6 +15,8 @@ project:
         - file: system/tim.c
         - file: system/compare.h
         - file: system/compare.c
+        - file: system/capture.c
+        - file: system/capture.h
 
     - group: hardware
       files:
@@ -42,6 +44,8 @@ project:
         - file: util/delay.h
         - file: util/pwm.h
         - file: util/pwm.c
+        - file: util/pwmi.h
+        - file: util/pwmi.c
 
   # List components to use for your application.
   # A software component is a re-usable unit that may be configurable.
