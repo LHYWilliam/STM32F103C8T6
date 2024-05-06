@@ -3,10 +3,10 @@
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_tim.h"
 
+#include "compare.h"
 #include "delay.h"
 #include "gpio.h"
 #include "motor.h"
-#include "pwm.h"
 #include "tim.h"
 
 uint16_t counter;
@@ -15,7 +15,7 @@ int main() {
     TIM tim = {
         RCC_APB1Periph_TIM2, TIM2, TIM_InternalClock, 720 - 1, 100 - 1,
     };
-    PWM pwm = {
+    Compare compare = {
         TIM2,
         0,
         TIM_OC1Init,
@@ -40,7 +40,7 @@ int main() {
         GPIO_Mode_Out_PP,
     };
     Motor motor = {
-        &tim, &pwm, &gpio_pwm, &gpio_direction1, &gpio_direction2,
+        &tim, &compare, &gpio_pwm, &gpio_direction1, &gpio_direction2,
     };
     Motor_Init(&motor);
 

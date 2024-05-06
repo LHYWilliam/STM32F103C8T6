@@ -5,6 +5,15 @@ project:
       files:
         - file: ./main.c
 
+    - group: system
+      files:
+        - file: system/interrupt.h
+        - file: system/interrupt.c
+        - file: system/tim.h
+        - file: system/tim.c
+        - file: system/compare.h
+        - file: system/compare.c
+
     - group: hardware
       files:
         - file: hardware/oled.h
@@ -20,10 +29,6 @@ project:
         - file: hardware/light_sensor.c
         - file: hardware/contrast_sensor.h
         - file: hardware/contrast_sensor.c
-        - file: hardware/tim.h
-        - file: hardware/tim.c
-        - file: hardware/pwm.h
-        - file: hardware/pwm.c
         - file: hardware/gpio.h
         - file: hardware/gpio.c
         - file: hardware/servo.h
@@ -35,8 +40,6 @@ project:
       files:
         - file: util/delay.c
         - file: util/delay.h
-        - file: util/interrupt.h
-        - file: util/interrupt.c
 
   # List components to use for your application.
   # A software component is a re-usable unit that may be configurable.
