@@ -7,6 +7,8 @@ project:
 
     - group: system
       files:
+        - file: system/gpio.h
+        - file: system/gpio.c
         - file: system/interrupt.h
         - file: system/interrupt.c
         - file: system/tim.h
@@ -29,8 +31,6 @@ project:
         - file: hardware/light_sensor.c
         - file: hardware/contrast_sensor.h
         - file: hardware/contrast_sensor.c
-        - file: hardware/gpio.h
-        - file: hardware/gpio.c
         - file: hardware/servo.h
         - file: hardware/servo.c
         - file: hardware/motor.h
@@ -40,6 +40,8 @@ project:
       files:
         - file: util/delay.c
         - file: util/delay.h
+        - file: util/pwm.h
+        - file: util/pwm.c
 
   # List components to use for your application.
   # A software component is a re-usable unit that may be configurable.
