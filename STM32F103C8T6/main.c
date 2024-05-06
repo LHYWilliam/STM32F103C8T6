@@ -7,6 +7,7 @@
 #include "delay.h"
 #include "gpio.h"
 #include "motor.h"
+#include "pwm.h"
 #include "tim.h"
 
 uint16_t counter;
@@ -27,6 +28,11 @@ int main() {
         GPIO_Pin_0,
         GPIO_Mode_AF_PP,
     };
+    PWM pwm = {
+        &tim,
+        &compare,
+        &gpio_pwm,
+    };
     GPIO gpio_direction1 = {
         RCC_APB2Periph_GPIOA,
         GPIOA,
@@ -40,17 +46,15 @@ int main() {
         GPIO_Mode_Out_PP,
     };
     Motor motor = {
-        &tim, &compare, &gpio_pwm, &gpio_direction1, &gpio_direction2,
+        &pwm,
+        &gpio_direction1,
+        &gpio_direction2,
     };
     Motor_Init(&motor);
 
     for (;;) {
-        for (int i = 0; i <= 100; i++) {
+        for (int i = -100; i <= 100; i++) {
             Motor_SetSpeed(&motor, i);
-            Delay_ms(10);
-        }
-        for (int i = 0; i <= 100; i++) {
-            Motor_SetSpeed(&motor, 100 - i);
             Delay_ms(10);
         }
     }

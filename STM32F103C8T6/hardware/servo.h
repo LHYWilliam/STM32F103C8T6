@@ -1,14 +1,10 @@
 #ifndef __SERVO_H
 #define __SERVO_H
 
-#include "compare.h"
-#include "gpio.h"
-#include "tim.h"
+#include "pwm.h"
 
 typedef struct {
-    TIM *tim;
-    Compare *compare;
-    GPIO *gpio;
+    PWM *pwm;
 } Servo;
 
 void Servo_Init(Servo *servo);

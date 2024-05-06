@@ -1,15 +1,12 @@
 #ifndef __MOTOR_H
 #define __MOTOR_H
 
-#include "compare.h"
 #include "gpio.h"
-#include "tim.h"
+#include "pwm.h"
 #include <stdint.h>
 
 typedef struct {
-    TIM *tim;
-    Compare *compare;
-    GPIO *gpio_pwm;
+    PWM *pwm;
     GPIO *gpio_direction1;
     GPIO *gpio_direction2;
 } Motor;
