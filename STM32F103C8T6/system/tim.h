@@ -3,6 +3,9 @@
 
 #include "stm32f10x.h"
 
+#define UNCMD ((uint8_t)0)
+#define CMD ((uint8_t)1)
+
 typedef struct {
     uint16_t TIM_ExtTRGPrescaler;
     uint16_t TIM_ExtTRGPolarity;
@@ -15,6 +18,7 @@ typedef struct {
     void (*TIM_ClockSource)(TIM_TypeDef *TIMx, ClockSource_Config *config);
     uint16_t TIM_Prescaler;
     uint16_t TIM_Period;
+    uint8_t CMD_Mode;
 } TIM;
 
 void TIM_Init(TIM *tim, ClockSource_Config *config);

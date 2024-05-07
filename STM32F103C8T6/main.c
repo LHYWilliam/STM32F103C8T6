@@ -1,79 +1,72 @@
+#include "misc.h"
 #include "stm32f10x.h"
 #include "stm32f10x_gpio.h"
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_tim.h"
 
+#include <stdint.h>
+#include <stdlib.h>
+
 #include "capture.h"
-#include "compare.h"
-#include "delay.h"
+#include "encoder.h"
 #include "gpio.h"
+#include "interrupt.h"
 #include "oled.h"
-#include "pwm.h"
-#include "pwmi.h"
 #include "tim.h"
 
-uint16_t counter;
+int16_t speed;
 
 int main() {
     OLED_Init();
 
     TIM tim2 = {
-        RCC_APB1Periph_TIM2, TIM2, TIM_InternalClock, 720 - 1, 100 - 1,
+        RCC_APB1Periph_TIM2, TIM2, TIM_InternalClock, 7200 - 1, 10000 - 1, CMD,
     };
-    Compare compare1 = {
-        TIM2,
-        50,
-        TIM_OC1Init,
-        TIM_SetCompare1,
-    };
-    GPIO gpio_pwm = {
-        RCC_APB2Periph_GPIOA,
-        GPIOA,
-        GPIO_Pin_0,
-        GPIO_Mode_AF_PP,
-    };
-    PWM pwm = {
-        &tim2,
-        &compare1,
-        &gpio_pwm,
-    };
-    PWM_Init(&pwm);
+    TIM_Init(&tim2, NULL);
 
-    GPIO gpio_capture = {
+    TIM_Interrupt interrupt = {
+        TIM2, TIM2_IRQn, NVIC_PriorityGroup_2, 1, 1,
+    };
+    TIM_Interrupt_Init(&interrupt);
+
+    GPIO gpio = {
         RCC_APB2Periph_GPIOA,
         GPIOA,
-        GPIO_Pin_6,
+        GPIO_Pin_6 | GPIO_Pin_7,
         GPIO_Mode_IPU,
     };
-    TIM tim3 = {
-        RCC_APB1Periph_TIM3, TIM3, TIM_InternalClock, 72 - 1, 65536 - 1,
+    TIM tim = {
+        RCC_APB1Periph_TIM3, TIM3, NULL, 1 - 1, 65536 - 1, UNCMD,
     };
-    Capture frequency = {
+    Capture capture1 = {
         TIM3, TIM_Channel_1,   TIM_ICPolarity_Rising, TIM_ICSelection_DirectTI,
         0xF,  TIM_GetCapture1,
     };
-    Capture duty = {
-        TIM3,
-        TIM_Channel_2,
-        TIM_ICPolarity_Falling,
-        TIM_ICSelection_IndirectTI,
-        0xF,
-        TIM_GetCapture2,
+    Capture capture2 = {
+        TIM3, TIM_Channel_2,   TIM_ICPolarity_Rising, TIM_ICSelection_DirectTI,
+        0xF,  TIM_GetCapture2,
     };
-    PWMI pwmi = {
-        &gpio_capture,
-        &frequency,
-        &duty,
-        &tim3,
-
+    Encoder encoder = {
+        &gpio,
+        &tim,
+        &capture1,
+        &capture2,
+        TIM_ICPolarity_Rising,
+        TIM_ICPolarity_Rising,
     };
-    PWMI_Init(&pwmi);
-
-    PWM_SetPulse(&pwm, 80);
-    PWM_SetPrescaler(&pwm, 7200 - 1);
+    Encoder_Init(&encoder);
 
     for (;;) {
-        OLED_ShowNum(1, 1, PWMI_GetFrequency(&pwmi), 6);
-        OLED_ShowNum(2, 1, PWMI_GetDuty(&pwmi), 3);
+        OLED_ShowSignedNum(1, 1, speed, 5);
+    }
+}
+
+void TIM2_IRQHandler(void) {
+    if (TIM_GetITStatus(TIM2, TIM_IT_Update) == SET) {
+
+        speed = (int16_t)TIM_GetCounter(TIM3);
+        TIM_SetCounter(TIM3, 0);
+
+        TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
     }
 }

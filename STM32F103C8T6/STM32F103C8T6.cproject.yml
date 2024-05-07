@@ -17,6 +17,8 @@ project:
         - file: system/compare.c
         - file: system/capture.c
         - file: system/capture.h
+        - file: system/encoder.h
+        - file: system/encoder.c
 
     - group: hardware
       files:
