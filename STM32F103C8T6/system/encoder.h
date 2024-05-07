@@ -11,7 +11,7 @@ typedef struct {
     Capture *capture1;
     Capture *capture2;
     uint16_t TIM_IC1Polarity;
-    uint16_t TIM_IC2Polarity
+    uint16_t TIM_IC2Polarity;
 } Encoder;
 
 void Encoder_Init(Encoder *encoder);

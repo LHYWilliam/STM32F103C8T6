@@ -20,7 +20,9 @@ project:
         - file: system/encoder.h
         - file: system/encoder.c
         - file: system/adc.h
-        - file: adc.c
+        - file: system/adc.c
+        - file: system/dma.c
+        - file: system/dma.h
 
     - group: hardware
       files:

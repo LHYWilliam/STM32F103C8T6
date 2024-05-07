@@ -5,9 +5,7 @@
 #include "adc.h"
 
 void ADC_Init_(ADC *adc) {
-    for (int i = 0; i < adc->ADC_NbrOfChannel; i++) {
-        GPIO_Init_(adc->gpios[i]);
-    }
+    GPIO_Init_(adc->gpio);
 
     RCC_APB2PeriphClockCmd(adc->RCC_APB2Periph, ENABLE);
     RCC_ADCCLKConfig(RCC_PCLK2_Div6);
@@ -26,6 +24,8 @@ void ADC_Init_(ADC *adc) {
         adc->ADC_NbrOfChannel,
     };
     ADC_Init(adc->ADCx, &ADC_InitTStruct);
+
+    ADC_DMACmd(adc->ADCx, adc->DMA_Mode);
 
     ADC_Cmd(adc->ADCx, ENABLE);
 
