@@ -60,9 +60,11 @@ int main() {
     };
     USART_Interrupt_Init(&interrupt);
 
+    uint8_t array[] = {0x48, 0x49, 0x50, 0x51};
     for (;;) {
         if (Key_Read(&key)) {
-            Serial_SendHex(&serial, data);
+            Serial_SendHexPack(&serial, array, 4);
+            // Serial_SendStringPack(&serial, "hello world!");
         };
         if (serial.RecieveState == GET) {
             OLED_ShowChar(1, 1, data);

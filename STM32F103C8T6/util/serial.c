@@ -1,5 +1,6 @@
 #include "stdarg.h"
 #include "stdio.h"
+#include <stdint.h>
 
 #include "serial.h"
 
@@ -35,4 +36,16 @@ void Serial_SendString(Serial *serial, char *format, ...) {
     for (uint8_t i = 0; string[i] != '\0'; i++) {
         Serial_SendByte(serial, string[i]);
     }
+}
+
+void Serial_SendHexPack(Serial *serial, uint8_t *array, uint16_t length) {
+    Serial_SendByte(serial, 0xFF);
+    for (uint8_t i = 0; i < length; i++) {
+        Serial_SendByte(serial, array[i]);
+    }
+    Serial_SendByte(serial, 0xFE);
+}
+
+void Serial_SendStringPack(Serial *serial, char *string) {
+    Serial_SendString(serial, "@%s\r\n", string);
 }
