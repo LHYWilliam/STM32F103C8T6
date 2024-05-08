@@ -54,6 +54,8 @@ project:
         - file: util/pwm.c
         - file: util/pwmi.h
         - file: util/pwmi.c
+        - file: util/serial.h
+        - file: util/serial.c
 
   # List components to use for your application.
   # A software component is a re-usable unit that may be configurable.

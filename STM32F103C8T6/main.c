@@ -6,6 +6,7 @@
 #include "gpio.h"
 #include "key.h"
 #include "oled.h"
+#include "serial.h"
 #include "usart.h"
 
 int main() {
@@ -36,19 +37,22 @@ int main() {
         GPIO_Mode_IPU,
     };
     USART usart = {
-        &gpio_TX,
-        &gpio_RX,
         RCC_APB2Periph_USART1,
         USART1,
         USART_Mode_Tx | USART_Mode_Rx,
     };
-    USART_Init_(&usart);
+    Serial serial = {
+        &gpio_TX,
+        &gpio_RX,
+        &usart,
+    };
+    Serial_Init(&serial);
 
     uint16_t data;
     for (;;) {
         if (Key_Read(&key)) {
-            USART_SendString(&usart, "%s", "你好世界\r\n");
-            // Serial_SendHex(&serial, 0x55);
+            // Serial_SendString(&serial, "%s", "你好世界\r\n");
+            Serial_SendHex(&serial, 0x55);
         };
         if (USART_GetFlagStatus(usart.USARTx, USART_FLAG_RXNE) == SET) {
             OLED_ShowHexNum(1, 1, USART_ReceiveData(usart.USARTx), 2);
