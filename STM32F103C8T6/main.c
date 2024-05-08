@@ -3,8 +3,6 @@
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_usart.h"
 
-#include <stdlib.h>
-
 #include "gpio.h"
 #include "key.h"
 #include "oled.h"
@@ -12,6 +10,7 @@
 
 int main() {
     OLED_Init();
+
     GPIO gpio_key = {
         RCC_APB2Periph_GPIOB,
         GPIOB,
@@ -24,20 +23,35 @@ int main() {
     };
     Key_Init(&key);
 
-    GPIO gpio_serial = {
+    GPIO gpio_TX = {
         RCC_APB2Periph_GPIOA,
         GPIOA,
         GPIO_Pin_9,
         GPIO_Mode_AF_PP,
     };
+    GPIO gpio_RX = {
+        RCC_APB2Periph_GPIOA,
+        GPIOA,
+        GPIO_Pin_10,
+        GPIO_Mode_IPU,
+    };
     Serial serial = {
-        &gpio_serial, NULL, RCC_APB2Periph_USART1, USART1, USART_Mode_Tx,
+        &gpio_TX,
+        &gpio_RX,
+        RCC_APB2Periph_USART1,
+        USART1,
+        USART_Mode_Tx | USART_Mode_Rx,
     };
     Serial_Init(&serial);
 
+    uint16_t data;
     for (;;) {
         if (Key_Read(&key)) {
-            Serial_Send(&serial, "%lf\r\n", 114.514);
-        }
+            Serial_SendString(&serial, "%s", "你好世界");
+            // Serial_SendHex(&serial, 0x55);
+        };
+        if (USART_GetFlagStatus(serial.USARTx, USART_FLAG_RXNE) == SET) {
+            OLED_ShowHexNum(1, 1, USART_ReceiveData(serial.USARTx), 2);
+        };
     }
 }

@@ -31,6 +31,8 @@ void Serial_Init(Serial *serial) {
     };
     USART_Init(serial->USARTx, &USART_InitStruct);
 
+    // USART_ITConfig(serial->USARTx, USART_IT_RXNE, ENABLE);
+
     USART_Cmd(serial->USARTx, ENABLE);
 }
 
@@ -40,17 +42,17 @@ void Serial_SendByte(Serial *serial, uint8_t byte) {
     USART_SendData(serial->USARTx, byte);
 }
 
-void Serial_SendString(Serial *serial, char *string) {
-    for (uint8_t i = 0; string[i] != '\0'; i++) {
-        Serial_SendByte(serial, string[i]);
-    }
+void Serial_SendHex(Serial *serial, uint8_t byte) {
+    Serial_SendByte(serial, byte);
 }
 
-void Serial_Send(Serial *serial, char *format, ...) {
+void Serial_SendString(Serial *serial, char *format, ...) {
     char string[100];
     va_list arg;
     va_start(arg, format);
     vsprintf(string, format, arg);
     va_end(arg);
-    Serial_SendString(serial, string);
+    for (uint8_t i = 0; string[i] != '\0'; i++) {
+        Serial_SendByte(serial, string[i]);
+    }
 }
