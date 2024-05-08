@@ -4,11 +4,14 @@
 #include "gpio.h"
 #include "usart.h"
 
+#define WAIT ((uint8_t)0)
+#define GET ((uint8_t)1)
+
 typedef struct {
     GPIO *TX;
     GPIO *RX;
     USART *usart;
-
+    uint8_t RecieveState;
 } Serial;
 
 void Serial_Init(Serial *serial);

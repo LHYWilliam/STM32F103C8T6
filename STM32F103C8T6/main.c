@@ -1,13 +1,19 @@
+#include "misc.h"
 #include "stm32f10x.h"
 #include "stm32f10x_gpio.h"
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_usart.h"
 
 #include "gpio.h"
+#include "interrupt.h"
 #include "key.h"
 #include "oled.h"
 #include "serial.h"
 #include "usart.h"
+#include <stdint.h>
+
+Serial *serial_it;
+uint8_t data;
 
 int main() {
     OLED_Init();
@@ -46,16 +52,30 @@ int main() {
         &gpio_RX,
         &usart,
     };
+    serial_it = &serial;
     Serial_Init(&serial);
 
-    uint16_t data;
+    USART_Interrupt interrupt = {
+        USART1, USART_IT_RXNE, USART1_IRQn, NVIC_PriorityGroup_2, 1, 1,
+    };
+    USART_Interrupt_Init(&interrupt);
+
     for (;;) {
         if (Key_Read(&key)) {
-            // Serial_SendString(&serial, "%s", "你好世界\r\n");
-            Serial_SendHex(&serial, 0x55);
+            Serial_SendString(&serial, "%02x\r\n", data);
         };
-        if (USART_GetFlagStatus(usart.USARTx, USART_FLAG_RXNE) == SET) {
-            OLED_ShowHexNum(1, 1, USART_ReceiveData(usart.USARTx), 2);
-        };
+        if (serial.RecieveState == GET) {
+            OLED_ShowChar(1, 1, data);
+            serial.RecieveState = WAIT;
+        }
+    }
+}
+
+void USART1_IRQHandler(void) {
+    if (USART_GetITStatus(USART1, USART_IT_RXNE) == SET) {
+        data = USART_ReceiveData(USART1);
+        serial_it->RecieveState = GET;
+
+        USART_ClearITPendingBit(USART1, USART_IT_RXNE);
     }
 }
