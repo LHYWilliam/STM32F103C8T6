@@ -23,8 +23,8 @@ project:
         - file: system/adc.c
         - file: system/dma.c
         - file: system/dma.h
-        - file: system/serial.h
-        - file: system/serial.c
+        - file: system/usart.h
+        - file: system/usart.c
 
     - group: hardware
       files:
