@@ -62,7 +62,7 @@ int main() {
 
     for (;;) {
         if (Key_Read(&key)) {
-            Serial_SendString(&serial, "%02x\r\n", data);
+            Serial_SendHex(&serial, data);
         };
         if (serial.RecieveState == GET) {
             OLED_ShowChar(1, 1, data);
