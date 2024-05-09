@@ -13,8 +13,6 @@ void Serial_Init(Serial *serial) {
     }
 
     USART_Init_(serial->usart);
-
-    serial->RecieveState = WAIT;
 }
 
 void Serial_SendByte(Serial *serial, uint8_t byte) {

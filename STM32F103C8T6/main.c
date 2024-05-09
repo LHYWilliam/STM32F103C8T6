@@ -12,8 +12,14 @@
 #include "usart.h"
 #include <stdint.h>
 
-Serial *serial_it;
-uint8_t data;
+uint8_t count = 0;
+uint8_t RecieveFlag = RESET;
+
+PackType type = None;
+
+uint8_t byte;
+uint8_t HexData[32];
+char StringData[32];
 
 int main() {
     OLED_Init();
@@ -52,7 +58,6 @@ int main() {
         &gpio_RX,
         &usart,
     };
-    serial_it = &serial;
     Serial_Init(&serial);
 
     USART_Interrupt interrupt = {
@@ -66,17 +71,52 @@ int main() {
             Serial_SendHexPack(&serial, array, 4);
             // Serial_SendStringPack(&serial, "hello world!");
         };
-        if (serial.RecieveState == GET) {
-            OLED_ShowChar(1, 1, data);
-            serial.RecieveState = WAIT;
+        if (RecieveFlag == SET) {
+            if (type == ByteData) {
+                OLED_ShowHexNum(1, 1, byte, 2);
+            } else if (type == HexPack) {
+                for (uint8_t i = 0; i < count; i++) {
+                    OLED_ShowHexNum(1, 1 + 3 * i, HexData[i], count);
+                }
+            } else if (type == StringPack) {
+                OLED_ShowString(1, 1, StringData);
+            }
+
+            count = 0;
+            type = None;
+            RecieveFlag = RESET;
         }
     }
 }
 
 void USART1_IRQHandler(void) {
     if (USART_GetITStatus(USART1, USART_IT_RXNE) == SET) {
-        data = USART_ReceiveData(USART1);
-        serial_it->RecieveState = GET;
+        byte = USART_ReceiveData(USART1);
+
+        if (type == None) {
+            if (byte == 0xFF) {
+                type = HexPack;
+            } else if (byte == '>') {
+                type = StringPack;
+            } else {
+                type = ByteData;
+                RecieveFlag = SET;
+            }
+        } else if (type == HexPack) {
+            if (byte == 0xFE) {
+                RecieveFlag = SET;
+            } else {
+                HexData[count++] = byte;
+            }
+        } else if (type == StringPack) {
+            if (byte == 0x0D) {
+                StringData[count] = '\0';
+
+                RecieveFlag = SET;
+            } else {
+                StringData[count++] = byte;
+            }
+        }
 
         USART_ClearITPendingBit(USART1, USART_IT_RXNE);
     }

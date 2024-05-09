@@ -35,8 +35,6 @@ project:
         - file: hardware/led.h
         - file: hardware/led.c
         - file: hardware/oled_font.h
-        - file: hardware/buzzer.h
-        - file: hardware/buzzer.c
         - file: hardware/servo.h
         - file: hardware/servo.c
         - file: hardware/motor.h
