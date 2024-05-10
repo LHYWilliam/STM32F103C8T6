@@ -45,5 +45,5 @@ void Serial_SendHexPack(Serial *serial, uint8_t *array, uint16_t length) {
 }
 
 void Serial_SendStringPack(Serial *serial, char *string) {
-    Serial_SendString(serial, "@%s\r\n", string);
+    Serial_SendString(serial, ">%s\r\n", string);
 }

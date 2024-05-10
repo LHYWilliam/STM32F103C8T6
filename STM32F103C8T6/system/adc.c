@@ -10,7 +10,7 @@ void ADC_Init_(ADC *adc) {
     RCC_APB2PeriphClockCmd(adc->RCC_APB2Periph, ENABLE);
     RCC_ADCCLKConfig(RCC_PCLK2_Div6);
 
-    for (int i = 0; i < adc->ADC_NbrOfChannel; i++) {
+    for (uint8_t i = 0; i < adc->ADC_NbrOfChannel; i++) {
         ADC_RegularChannelConfig(adc->ADCx, adc->ADC_Channel[i], i + 1,
                                  ADC_SampleTime_55Cycles5);
     }

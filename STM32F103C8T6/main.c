@@ -68,15 +68,15 @@ int main() {
     uint8_t array[] = {0x48, 0x49, 0x50, 0x51};
     for (;;) {
         if (Key_Read(&key)) {
-            Serial_SendHexPack(&serial, array, 4);
-            // Serial_SendStringPack(&serial, "hello world!");
+            // Serial_SendHexPack(&serial, array, 4);
+            Serial_SendStringPack(&serial, "hello world!");
         };
         if (RecieveFlag == SET) {
             if (type == ByteData) {
                 OLED_ShowHexNum(1, 1, byte, 2);
             } else if (type == HexPack) {
                 for (uint8_t i = 0; i < count; i++) {
-                    OLED_ShowHexNum(1, 1 + 3 * i, HexData[i], count);
+                    OLED_ShowHexNum(1, 1 + 3 * i, HexData[i], 2);
                 }
             } else if (type == StringPack) {
                 OLED_ShowString(1, 1, StringData);
@@ -109,8 +109,8 @@ void USART1_IRQHandler(void) {
                 HexData[count++] = byte;
             }
         } else if (type == StringPack) {
-            if (byte == 0x0D) {
-                StringData[count] = '\0';
+            if (count >= 1 && byte == '\n' && StringData[count - 1] == '\r') {
+                StringData[--count] = '\0';
 
                 RecieveFlag = SET;
             } else {
