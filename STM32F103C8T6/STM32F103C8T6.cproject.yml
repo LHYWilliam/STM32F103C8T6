@@ -25,6 +25,8 @@ project:
         - file: system/dma.h
         - file: system/usart.h
         - file: system/usart.c
+        - file: system/i2c.h
+        - file: system/i2c.c
 
     - group: hardware
       files:
@@ -39,6 +41,8 @@ project:
         - file: hardware/servo.c
         - file: hardware/motor.h
         - file: hardware/motor.c
+        - file: hardware/mpu.h
+        - file: hardware/mpu.c
 
     - group: util
       files:
