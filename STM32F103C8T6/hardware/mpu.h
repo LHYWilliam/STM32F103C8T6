@@ -47,7 +47,11 @@ typedef struct {
 
 void MPU_Init(MPU *mpu);
 void MPU_Cmd(MPU *mpu);
-void MPU_GetData(MPU *mpu, int16_t *data);
+void MPU_AdaptOffset(MPU *mpu, uint16_t times, int16_t *xacc_offset,
+                     int16_t *yacc_offset, int16_t *xgyro_offset,
+                     int16_t *ygyro_offset);
+void MPU_GetData(MPU *mpu, int16_t *xacc, int16_t *yacc, int16_t *zacc,
+                 int16_t *xgyro, int16_t *ygyro, int16_t *zgyro);
 void MPU_Send(MPU *mpu, uint8_t RegisterAddress, const uint8_t *bytes,
               uint8_t length);
 void MPU_Receieve(MPU *mpu, uint8_t RegisterAddress, uint8_t *bytes,

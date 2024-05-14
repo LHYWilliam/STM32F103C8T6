@@ -1,15 +1,35 @@
 #include "stm32f10x.h"
 #include "stm32f10x_gpio.h"
 #include "stm32f10x_rcc.h"
+#include "stm32f10x_usart.h"
 
+#include <stdlib.h>
+
+#include "delay.h"
 #include "gpio.h"
 #include "i2c.h"
 #include "mpu.h"
-#include "oled.h"
-#include <stdint.h>
+#include "serial.h"
+#include "usart.h"
 
 int main() {
-    OLED_Init();
+    GPIO gpio_TX = {
+        RCC_APB2Periph_GPIOA,
+        GPIOA,
+        GPIO_Pin_9,
+        GPIO_Mode_AF_PP,
+    };
+    USART usart = {
+        RCC_APB2Periph_USART1,
+        USART1,
+        USART_Mode_Tx,
+    };
+    Serial serial = {
+        &gpio_TX,
+        NULL,
+        &usart,
+    };
+    Serial_Init(&serial);
 
     GPIO SCL = {
         RCC_APB2Periph_GPIOB,
@@ -36,15 +56,18 @@ int main() {
     };
     MPU_Init(&mpu);
 
-    int16_t data[6];
-    for (;;) {
-        MPU_GetData(&mpu, data);
+    int16_t xacc, yacc, zacc, xgyro, ygyro, zgyro;
+    int16_t xacc_offset, yacc_offset, xgyro_offset, ygyro_offset;
 
-        OLED_ShowSignedNum(2, 1, data[0], 5);
-        OLED_ShowSignedNum(3, 1, data[1], 5);
-        OLED_ShowSignedNum(4, 1, data[2], 5);
-        OLED_ShowSignedNum(2, 8, data[3], 5);
-        OLED_ShowSignedNum(3, 8, data[4], 5);
-        OLED_ShowSignedNum(4, 8, data[5], 5);
+    Delay_ms(1000);
+    MPU_AdaptOffset(&mpu, 256, &xacc_offset, &yacc_offset, &xgyro_offset,
+                    &ygyro_offset);
+
+    for (;;) {
+        MPU_GetData(&mpu, &xacc, &yacc, &zacc, &xgyro, &ygyro, &zgyro);
+
+        Serial_SendString(&serial, "%+6d %+6d %+6d %+6d %+6d %+6d\r\n",
+                          xacc - xacc_offset, yacc - yacc_offset, zacc,
+                          xgyro - xgyro_offset, ygyro - ygyro_offset, zgyro);
     }
 }
