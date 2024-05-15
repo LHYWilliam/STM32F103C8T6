@@ -27,6 +27,8 @@ project:
         - file: system/usart.c
         - file: system/i2c.h
         - file: system/i2c.c
+        - file: system/rtc.h
+        - file: system/rtc.c
 
     - group: hardware
       files:

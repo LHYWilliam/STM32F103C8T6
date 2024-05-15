@@ -1,6 +1,9 @@
-#include "mpu.h"
+#include <math.h>
+
 #include "gpio.h"
 #include "i2c.h"
+#include "mpu.h"
+#include "rtc.h"
 
 void MPU_Init(MPU *mpu) {
     GPIO_Init_(mpu->SCL);
@@ -33,9 +36,10 @@ void MPU_Cmd(MPU *mpu) {
 
 void MPU_AdaptOffset(MPU *mpu, uint16_t times, int16_t *xacc_offset,
                      int16_t *yacc_offset, int16_t *xgyro_offset,
-                     int16_t *ygyro_offset) {
+                     int16_t *ygyro_offset, int16_t *zgyro_offset) {
     int16_t xacc, yacc, zacc, xgyro, ygyro, zgyro;
-    int64_t xacc_sum = 0, yacc_sum = 0, xgyro_sum = 0, ygyro_sum = 0;
+    int64_t xacc_sum = 0, yacc_sum = 0, xgyro_sum = 0, ygyro_sum = 0,
+            zgyro_sum = 0;
 
     for (uint16_t i = 0; i < times; i++) {
         MPU_GetData(mpu, &xacc, &yacc, &zacc, &xgyro, &ygyro, &zgyro);
@@ -43,12 +47,14 @@ void MPU_AdaptOffset(MPU *mpu, uint16_t times, int16_t *xacc_offset,
         yacc_sum += yacc;
         xgyro_sum += xgyro;
         ygyro_sum += ygyro;
+        zgyro_sum += zgyro;
     }
 
     *xacc_offset = (int16_t)(xacc_sum / times);
     *yacc_offset = (int16_t)(yacc_sum / times);
     *xgyro_offset = (int16_t)(xgyro_sum / times);
     *ygyro_offset = (int16_t)(ygyro_sum / times);
+    *zgyro_offset = (int16_t)(zgyro_sum / times);
 }
 
 void MPU_GetData(MPU *mpu, int16_t *xacc, int16_t *yacc, int16_t *zacc,
@@ -63,6 +69,53 @@ void MPU_GetData(MPU *mpu, int16_t *xacc, int16_t *yacc, int16_t *zacc,
     *xgyro = (gyro[0] << 8) | gyro[1];
     *ygyro = (gyro[2] << 8) | gyro[3];
     *zgyro = (gyro[4] << 8) | gyro[5];
+}
+
+void MPU_Kalman(MPU *mpu, int16_t *roll, int16_t *pitch, int16_t xacc,
+                int16_t yacc, int16_t zacc, int16_t xgyro, int16_t ygyro,
+                int16_t zgyro) {
+    static uint32_t lasttime = 0;
+    static float k_roll = 0, k_pitch = 0;
+    static const float rad2deg = 57.29578;
+    static float e_P[2][2] = {{1, 0}, {0, 1}};
+    static float k_k[2][2] = {{0, 0}, {0, 0}};
+
+    uint32_t now = RTC_time();
+    float dt = (now - lasttime) / 1000.0;
+    lasttime = RTC_time();
+
+    float roll_v = xgyro +
+                   ((sin(k_pitch) * sin(k_roll)) / cos(k_pitch)) * ygyro +
+                   ((sin(k_pitch) * cos(k_roll)) / cos(k_pitch)) * zgyro;
+    float pitch_v = cos(k_roll) * ygyro - sin(k_roll) * zgyro;
+    float gyro_roll = k_roll + dt * roll_v;
+    float gyro_pitch = k_pitch + dt * pitch_v;
+
+    e_P[0][0] = e_P[0][0] + 0.0025;
+    e_P[0][1] = e_P[0][1] + 0;
+    e_P[1][0] = e_P[1][0] + 0;
+    e_P[1][1] = e_P[1][1] + 0.0025;
+
+    k_k[0][0] = e_P[0][0] / (e_P[0][0] + 0.3);
+    k_k[0][1] = 0;
+    k_k[1][0] = 0;
+    k_k[1][1] = e_P[1][1] / (e_P[1][1] + 0.3);
+
+    float acc_roll = atan(1.0 * yacc / zacc) * rad2deg;
+
+    float acc_pitch =
+        -1 * atan(xacc / sqrt(yacc * yacc + zacc * zacc)) * rad2deg;
+
+    k_roll = gyro_roll + k_k[0][0] * (acc_roll - gyro_roll);
+    k_pitch = gyro_pitch + k_k[1][1] * (acc_pitch - gyro_pitch);
+
+    e_P[0][0] = (1 - k_k[0][0]) * e_P[0][0];
+    e_P[0][1] = 0;
+    e_P[1][0] = 0;
+    e_P[1][1] = (1 - k_k[1][1]) * e_P[1][1];
+
+    *roll = k_roll;
+    *pitch = k_pitch;
 }
 
 void MPU_Send(MPU *mpu, uint8_t RegisterAddress, const uint8_t *bytes,

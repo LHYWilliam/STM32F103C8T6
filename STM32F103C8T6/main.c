@@ -9,6 +9,7 @@
 #include "gpio.h"
 #include "i2c.h"
 #include "mpu.h"
+#include "rtc.h"
 #include "serial.h"
 #include "usart.h"
 
@@ -57,17 +58,19 @@ int main() {
     MPU_Init(&mpu);
 
     int16_t xacc, yacc, zacc, xgyro, ygyro, zgyro;
-    int16_t xacc_offset, yacc_offset, xgyro_offset, ygyro_offset;
+    int16_t xacc_offset, yacc_offset, xgyro_offset, ygyro_offset, zgyro_offset;
 
-    Delay_ms(1000);
     MPU_AdaptOffset(&mpu, 256, &xacc_offset, &yacc_offset, &xgyro_offset,
-                    &ygyro_offset);
+                    &ygyro_offset, &zgyro_offset);
 
+    RTC_Init();
     for (;;) {
         MPU_GetData(&mpu, &xacc, &yacc, &zacc, &xgyro, &ygyro, &zgyro);
 
+        Serial_SendString(&serial, "time: %4d    ", RTC_time());
         Serial_SendString(&serial, "%+6d %+6d %+6d %+6d %+6d %+6d\r\n",
                           xacc - xacc_offset, yacc - yacc_offset, zacc,
-                          xgyro - xgyro_offset, ygyro - ygyro_offset, zgyro);
+                          xgyro - xgyro_offset, ygyro - ygyro_offset,
+                          zgyro - zgyro_offset);
     }
 }
