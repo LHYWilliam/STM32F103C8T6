@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdint.h>
 
 #include "gpio.h"
 #include "i2c.h"
@@ -71,18 +72,17 @@ void MPU_GetData(MPU *mpu, int16_t *xacc, int16_t *yacc, int16_t *zacc,
     *zgyro = (gyro[4] << 8) | gyro[5];
 }
 
-void MPU_Kalman(MPU *mpu, int16_t *roll, int16_t *pitch, int16_t xacc,
-                int16_t yacc, int16_t zacc, int16_t xgyro, int16_t ygyro,
-                int16_t zgyro) {
-    static uint32_t lasttime = 0;
+void MPU_Kalman(MPU *mpu, float *roll, float *pitch, int16_t xacc, int16_t yacc,
+                int16_t zacc, int16_t xgyro, int16_t ygyro, int16_t zgyro) {
+    static uint32_t lasttime, now = 0.;
     static float k_roll = 0, k_pitch = 0;
     static const float rad2deg = 57.29578;
     static float e_P[2][2] = {{1, 0}, {0, 1}};
     static float k_k[2][2] = {{0, 0}, {0, 0}};
 
-    uint32_t now = RTC_time();
+    now = RTC_time_ms();
     float dt = (now - lasttime) / 1000.0;
-    lasttime = RTC_time();
+    lasttime = RTC_time_ms();
 
     float roll_v = xgyro +
                    ((sin(k_pitch) * sin(k_roll)) / cos(k_pitch)) * ygyro +

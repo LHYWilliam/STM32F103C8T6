@@ -5,7 +5,6 @@
 
 #include <stdlib.h>
 
-#include "delay.h"
 #include "gpio.h"
 #include "i2c.h"
 #include "mpu.h"
@@ -57,6 +56,7 @@ int main() {
     };
     MPU_Init(&mpu);
 
+    float roll, pitch;
     int16_t xacc, yacc, zacc, xgyro, ygyro, zgyro;
     int16_t xacc_offset, yacc_offset, xgyro_offset, ygyro_offset, zgyro_offset;
 
@@ -66,11 +66,12 @@ int main() {
     RTC_Init();
     for (;;) {
         MPU_GetData(&mpu, &xacc, &yacc, &zacc, &xgyro, &ygyro, &zgyro);
+        MPU_Kalman(&mpu, &roll, &pitch, xacc, yacc, zacc, xgyro, ygyro, zgyro);
 
-        Serial_SendString(&serial, "time: %4d    ", RTC_time());
-        Serial_SendString(&serial, "%+6d %+6d %+6d %+6d %+6d %+6d\r\n",
+        Serial_SendString(&serial, "%+6d %+6d %+6d %+6d %+6d %+6d ",
                           xacc - xacc_offset, yacc - yacc_offset, zacc,
                           xgyro - xgyro_offset, ygyro - ygyro_offset,
                           zgyro - zgyro_offset);
+        Serial_SendString(&serial, "roll:%+8.2f pitch:%+8.2f\r\n", roll, pitch);
     }
 }

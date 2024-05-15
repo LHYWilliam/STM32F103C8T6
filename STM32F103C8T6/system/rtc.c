@@ -39,4 +39,8 @@ void RTC_Init(void) {
     RTC_WaitForLastTask();
 }
 
-uint32_t RTC_time(void) { return RTC_GetCounter(); }
+uint32_t RTC_time_s(void) { return RTC_GetCounter(); }
+
+uint32_t RTC_time_ms(void) {
+    return RTC_GetCounter() * 1000 + (32767 - RTC_GetDivider()) / 32767.0 * 999;
+}
