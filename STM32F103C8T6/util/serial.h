@@ -5,6 +5,8 @@
 #include "usart.h"
 #include <stdint.h>
 
+#define logger(args...) Serial_SendString(GlobalSerial, args)
+
 typedef enum {
     None,
     ByteData,

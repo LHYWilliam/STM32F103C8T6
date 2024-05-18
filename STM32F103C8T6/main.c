@@ -5,7 +5,6 @@
 
 #include <stdlib.h>
 
-#include "delay.h"
 #include "dmp.h"
 #include "gpio.h"
 #include "i2c.h"
@@ -37,23 +36,23 @@ int main() {
     };
     GlobalSerial = &serial;
     Serial_Init(&serial);
-    Serial_SendString(&serial, "\r\nSerial started\r\n");
+    logger("\r\nSerial started\r\n");
 
     I2C_Init_();
     MPU mpu = {
         MPU6050_DEVICE_ADDRESS,
     };
-    Serial_SendString(&serial, "\r\nstarting MPU\r\n");
+    logger("\r\nstarting MPU\r\n");
     MPU_Init(&mpu);
-    Serial_SendString(&serial, "MPU started\r\n");
+    logger("MPU started\r\n");
 
-    Serial_SendString(&serial, "\r\nstarting RTC\r\n");
+    logger("\r\nstarting RTC\r\n");
     RTC_Init();
-    Serial_SendString(&serial, "RTC started\r\n");
+    logger("RTC started\r\n");
 
-    Serial_SendString(&serial, "\r\nstarting DMP\r\n");
+    logger("\r\nstarting DMP\r\n");
     DMP_Init();
-    Serial_SendString(&serial, "DMP started\r\n");
+    logger("DMP started\r\n");
 
     float roll = 0, pitch = 0, yaw = 0;
     int16_t xacc, yacc, zacc, xgyro, ygyro, zgyro;

@@ -21,7 +21,5 @@ void USART_Init_(USART *usart) {
     };
     USART_Init(usart->USARTx, &USART_InitStruct);
 
-    // USART_ITConfig(usart->USARTx, USART_IT_RXNE, ENABLE);
-
     USART_Cmd(usart->USARTx, ENABLE);
 }
