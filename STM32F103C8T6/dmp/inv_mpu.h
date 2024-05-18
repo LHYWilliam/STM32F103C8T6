@@ -28,18 +28,7 @@
 #define INV_XYZ_ACCEL (0x08)
 #define INV_XYZ_COMPASS (0x01)
 
-struct int_param_s {
-#if defined EMPL_TARGET_MSP430 || defined MOTION_DRIVER_TARGET_MSP430
-    void (*cb)(void);
-    unsigned short pin;
-    unsigned char lp_exit;
-    unsigned char active_low;
-#elif defined EMPL_TARGET_UC3L0
-    unsigned long pin;
-    void (*cb)(volatile void *);
-    void *arg;
-#endif
-};
+struct int_param_s {};
 
 #define MPU_INT_STATUS_DATA_READY (0x0001)
 #define MPU_INT_STATUS_DMP (0x0002)
@@ -126,6 +115,5 @@ int mpu_reg_dump(void);
 int mpu_read_reg(unsigned char reg, unsigned char *data);
 int mpu_run_self_test(long *gyro, long *accel);
 int mpu_run_6500_self_test(long *gyro, long *accel, unsigned char debug);
-int mpu_register_tap_cb(void (*func)(unsigned char, unsigned char));
 
 #endif /* #ifndef _INV_MPU_H_ */

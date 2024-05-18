@@ -31,12 +31,9 @@ void I2C_Send(I2C *i2c, uint8_t DeviceAddress, uint8_t RegisterAddress,
 
     for (uint8_t i = 0; i < length; i++) {
         I2C_SendData(i2c->I2Cx, bytes[i]);
-        if (i < length - 1) {
-            I2C_WaitEvent(i2c->I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTING);
-        } else {
-            I2C_WaitEvent(i2c->I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED);
-        }
+        I2C_WaitEvent(i2c->I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTING);
     }
+    I2C_WaitEvent(i2c->I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED);
 
     I2C_GenerateSTOP(i2c->I2Cx, ENABLE);
 }
@@ -49,7 +46,7 @@ void I2C_Receive(I2C *i2c, uint8_t DeviceAddress, uint8_t RegisterAddress,
     I2C_WaitEvent(i2c->I2Cx, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED);
 
     I2C_SendData(i2c->I2Cx, RegisterAddress);
-    I2C_WaitEvent(i2c->I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTING);
+    I2C_WaitEvent(i2c->I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED);
 
     I2C_GenerateSTART(i2c->I2Cx, ENABLE);
     I2C_WaitEvent(i2c->I2Cx, I2C_EVENT_MASTER_MODE_SELECT);

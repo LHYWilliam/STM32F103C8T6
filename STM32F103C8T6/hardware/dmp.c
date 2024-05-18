@@ -12,71 +12,47 @@ static signed char gyro_orientation[9] = {-1, 0, 0, 0, -1, 0, 0, 0, 1};
 
 void DMP_Init() {
     int8_t result;
-    if ((result = mpu_init(NULL)) == 0) {
-        Serial_SendString(GlobalSerial, "mpu_init succeeded\r\n");
-    } else {
-        Serial_SendString(GlobalSerial, "mpu_init failed %d\r\n", result);
-    }
 
-    if ((result = mpu_set_sensors(INV_XYZ_GYRO | INV_XYZ_ACCEL)) == 0) {
-        Serial_SendString(GlobalSerial, "mpu_set_sensors succeeded\r\n");
-    } else {
-        Serial_SendString(GlobalSerial, "mpu_set_sensors failed %d\r\n",
-                          result);
-    }
-    if ((result = mpu_configure_fifo(INV_XYZ_GYRO | INV_XYZ_ACCEL)) == 0) {
-        Serial_SendString(GlobalSerial, "mpu_configure_fifo succeeded\r\n");
-    } else {
-        Serial_SendString(GlobalSerial, "mpu_configure_fifo failed %d\r\n",
-                          result);
-    }
-    if ((result = mpu_set_sample_rate(DEFAULT_MPU_HZ)) == 0) {
-        Serial_SendString(GlobalSerial, "mpu_set_sample_rate succeeded\r\n");
-    } else {
-        Serial_SendString(GlobalSerial, "mpu_set_sample_rate failed %d\r\n",
-                          result);
-    }
+    result = mpu_init(NULL);
+    Serial_SendString(GlobalSerial, "mpu_init %s\r\n",
+                      result ? "Failed" : "succeeded");
 
-    if ((result = dmp_load_motion_driver_firmware()) == 0) {
-        Serial_SendString(GlobalSerial,
-                          "dmp_load_motion_driver_firmware succeeded\r\n");
-    } else {
-        Serial_SendString(GlobalSerial,
-                          "dmp_load_motion_driver_firmware failed %d\r\n",
-                          result);
-    }
+    result = mpu_set_sensors(INV_XYZ_GYRO | INV_XYZ_ACCEL);
+    Serial_SendString(GlobalSerial, "mpu_set_sensors %s\r\n",
+                      result ? "Failed" : "succeeded");
+    result = mpu_configure_fifo(INV_XYZ_GYRO | INV_XYZ_ACCEL);
+    Serial_SendString(GlobalSerial, "mpu_configure_fifo %s\r\n",
+                      result ? "Failed" : "succeeded");
+    result = mpu_set_sample_rate(DEFAULT_MPU_HZ);
+    Serial_SendString(GlobalSerial, "mpu_set_sample_rate %s\r\n",
+                      result ? "Failed" : "succeeded");
 
-    if ((result = dmp_set_orientation(
-             inv_orientation_matrix_to_scalar(gyro_orientation))) == 0) {
-        Serial_SendString(GlobalSerial, "dmp_set_orientation succeeded\r\n");
-    } else {
-        Serial_SendString(GlobalSerial, "dmp_set_orientation failed %d\r\n",
-                          result);
-    }
-    if ((result = dmp_enable_feature(
-             DMP_FEATURE_6X_LP_QUAT | DMP_FEATURE_TAP |
-             DMP_FEATURE_ANDROID_ORIENT | DMP_FEATURE_SEND_RAW_ACCEL |
-             DMP_FEATURE_SEND_CAL_GYRO | DMP_FEATURE_GYRO_CAL)) == 0) {
-        Serial_SendString(GlobalSerial, "dmp_enable_feature succeeded\r\n");
-    } else {
-        Serial_SendString(GlobalSerial, "dmp_enable_feature failed %d\r\n",
-                          result);
-    }
+    result = dmp_load_motion_driver_firmware();
+    Serial_SendString(GlobalSerial, "dmp_load_motion_driver_firmware %s\r\n",
+                      result ? "Failed" : "succeeded");
 
-    if ((result = dmp_set_fifo_rate(DEFAULT_MPU_HZ)) == 0) {
-        Serial_SendString(GlobalSerial, "dmp_set_fifo_rate succeeded\r\n");
-    } else {
-        Serial_SendString(GlobalSerial, "dmp_set_fifo_rate failed %d\r\n",
-                          result);
-    }
-    // run_self_test();
+    result =
+        dmp_set_orientation(inv_orientation_matrix_to_scalar(gyro_orientation));
+    Serial_SendString(GlobalSerial, "dmp_set_orientation %s\r\n",
+                      result ? "Failed" : "succeeded");
+    result = dmp_enable_feature(
+        DMP_FEATURE_6X_LP_QUAT | DMP_FEATURE_TAP | DMP_FEATURE_ANDROID_ORIENT |
+        DMP_FEATURE_SEND_RAW_ACCEL | DMP_FEATURE_SEND_CAL_GYRO |
+        DMP_FEATURE_GYRO_CAL);
+    Serial_SendString(GlobalSerial, "dmp_enable_feature %s\r\n",
+                      result ? "Failed" : "succeeded");
 
-    if ((result = mpu_set_dmp_state(1)) == 0) {
-        Serial_SendString(GlobalSerial, "mpu_set_dmp_state succeeded\r\n");
-    } else {
-        Serial_SendString(GlobalSerial, "mpu_set_dmp_state failed %d\r\n",
-                          result);
-    }
+    result = dmp_set_fifo_rate(DEFAULT_MPU_HZ);
+    Serial_SendString(GlobalSerial, "dmp_set_fifo_rate %s\r\n",
+                      result ? "Failed" : "succeeded");
+
+    Serial_SendString(GlobalSerial, "runing self_test\r\n");
+    run_self_test();
+    Serial_SendString(GlobalSerial, "self_test finished");
+
+    result = mpu_set_dmp_state(1);
+    Serial_SendString(GlobalSerial, "mpu_set_dmp_state %s\r\n",
+                      result ? "Failed" : "succeeded");
 }
 
 void DMP_GetData(float *pitch, float *roll, float *yaw) {
