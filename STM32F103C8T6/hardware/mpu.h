@@ -1,10 +1,7 @@
 #ifndef __MPU_H
 #define __MPU_H
 
-#include "gpio.h"
-#include "i2c.h"
-
-#define MPU6050_DEVICE_ADDRESS ((uint8_t)(0x68 << 1))
+#include <stdint.h>
 
 #define MPU6050_PWR_MGMT_1 ((uint8_t)0x6B)
 #define MPU6050_PWR_MGMT_2 ((uint8_t)0x6C)
@@ -37,10 +34,7 @@
 #define MPU6050_GYRO_ZOUT_L ((uint8_t)0x48)
 
 typedef struct {
-    GPIO *SCL;
-    GPIO *SDA;
-
-    I2C *i2c;
+    // I2C *i2c;
 
     uint8_t DeviceAddress;
 } MPU;

@@ -1,19 +1,11 @@
 #include <math.h>
 #include <stdint.h>
 
-#include "gpio.h"
 #include "i2c.h"
 #include "mpu.h"
 #include "rtc.h"
 
-void MPU_Init(MPU *mpu) {
-    GPIO_Init_(mpu->SCL);
-    GPIO_Init_(mpu->SDA);
-
-    I2C_Init_(mpu->i2c);
-
-    MPU_Cmd(mpu);
-}
+void MPU_Init(MPU *mpu) { MPU_Cmd(mpu); }
 
 void MPU_Cmd(MPU *mpu) {
     const uint8_t PWR_MGMT_1 = 0x01;
@@ -120,9 +112,9 @@ void MPU_Kalman(MPU *mpu, float *roll, float *pitch, int16_t xacc, int16_t yacc,
 
 void MPU_Send(MPU *mpu, uint8_t RegisterAddress, const uint8_t *bytes,
               uint8_t length) {
-    I2C_Send(mpu->i2c, mpu->DeviceAddress, RegisterAddress, bytes, length);
+    I2C_Send(mpu->DeviceAddress, RegisterAddress, bytes, length);
 }
 void MPU_Receieve(MPU *mpu, uint8_t RegisterAddress, uint8_t *bytes,
                   uint8_t length) {
-    I2C_Receive(mpu->i2c, mpu->DeviceAddress, RegisterAddress, bytes, length);
+    I2C_Receive(mpu->DeviceAddress, RegisterAddress, bytes, length);
 }

@@ -58,8 +58,7 @@ project:
         - file: util/pwmi.c
         - file: util/serial.h
         - file: util/serial.c
-        - file: util/softi2c.h
-        - file: util/softi2c.c
+
     - group: dmp
       files:
         - file: dmp/dmpKey.h

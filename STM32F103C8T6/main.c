@@ -12,10 +12,10 @@
 #include "mpu.h"
 #include "rtc.h"
 #include "serial.h"
-#include "softi2c.h"
 #include "usart.h"
 
-I2C *GlobalI2C;
+#define MPU6050_DEVICE_ADDRESS ((uint8_t)0x68)
+
 Serial *GlobalSerial;
 
 int main() {
@@ -39,34 +39,13 @@ int main() {
     Serial_Init(&serial);
     Serial_SendString(&serial, "\r\nSerial started\r\n");
 
-    // GPIO SCL = {
-    //     RCC_APB2Periph_GPIOB,
-    //     GPIOB,
-    //     GPIO_Pin_10,
-    //     GPIO_Mode_AF_OD,
-    // };
-    // GPIO SDA = {
-    //     RCC_APB2Periph_GPIOB,
-    //     GPIOB,
-    //     GPIO_Pin_11,
-    //     GPIO_Mode_AF_OD,
-    // };
-    // I2C i2c = {
-    //     RCC_APB1Periph_I2C2,
-    //     I2C2,
-    //     10000,
-    // };
-    // GlobalI2C = &i2c;
-    // MPU mpu = {
-    //     &SCL,
-    //     &SDA,
-    //     &i2c,
-    //     MPU6050_DEVICE_ADDRESS,
-    // };
-    MPU_IIC_Init();
-    // Serial_SendString(&serial, "\r\nstarting MPU\r\n");
-    // MPU_Init(&mpu);
-    // Serial_SendString(&serial, "MPU started\r\n");
+    I2C_Init_();
+    MPU mpu = {
+        MPU6050_DEVICE_ADDRESS,
+    };
+    Serial_SendString(&serial, "\r\nstarting MPU\r\n");
+    MPU_Init(&mpu);
+    Serial_SendString(&serial, "MPU started\r\n");
 
     Serial_SendString(&serial, "\r\nstarting RTC\r\n");
     RTC_Init();
@@ -88,16 +67,13 @@ int main() {
     for (;;) {
         // Delay_ms(100);
         // MPU_GetData(&mpu, &xacc, &yacc, &zacc, &xgyro, &ygyro, &zgyro);
-
         // Serial_SendString(&serial, "%+6d %+6d %+6d %+6d %+6d %+6d\r",
         //                   xacc - xacc_offset, yacc - yacc_offset, zacc,
         //                   xgyro - xgyro_offset, ygyro - ygyro_offset,
         //                   zgyro - zgyro_offset);
+
         DMP_GetData(&pitch, &roll, &yaw);
         Serial_SendString(&serial, "pitch:%+8.2f roll:%+8.2f yaw:%+8.2f\r",
                           pitch, roll, yaw);
-
-        // MPU_Kalman(&mpu, &roll, &pitch, xacc, yacc, zacc, xgyro, ygyro,
-        // zgyro);
     }
 }
