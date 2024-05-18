@@ -45,6 +45,8 @@ project:
         - file: hardware/motor.c
         - file: hardware/mpu.h
         - file: hardware/mpu.c
+        - file: hardware/dmp.h
+        - file: hardware/dmp.c
 
     - group: util
       files:
@@ -56,6 +58,14 @@ project:
         - file: util/pwmi.c
         - file: util/serial.h
         - file: util/serial.c
+    - group: dmp
+      files:
+        - file: dmp/dmpKey.h
+        - file: dmp/dmpmap.h
+        - file: dmp/inv_mpu_dmp_motion_driver.c
+        - file: dmp/inv_mpu_dmp_motion_driver.h
+        - file: dmp/inv_mpu.c
+        - file: dmp/inv_mpu.h
 
   # List components to use for your application.
   # A software component is a re-usable unit that may be configurable.
