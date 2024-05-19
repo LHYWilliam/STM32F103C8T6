@@ -16,8 +16,11 @@
 #define MPU6050_DEVICE_ADDRESS ((uint8_t)0x68)
 
 Serial *GlobalSerial;
+I2C *GlobalI2C;
 
 int main() {
+    RTC_Init();
+
     GPIO gpio_TX = {
         RCC_APB2Periph_GPIOA,
         GPIOA,
@@ -36,23 +39,37 @@ int main() {
     };
     GlobalSerial = &serial;
     Serial_Init(&serial);
-    logger("\r\nSerial started\r\n");
+    info("Serial started\r\n");
 
-    I2C_Init_();
+    GPIO SCL = {
+        RCC_APB2Periph_GPIOB,
+        GPIOB,
+        GPIO_Pin_10,
+        GPIO_Mode_Out_OD,
+    };
+    GPIO SDA = {
+        RCC_APB2Periph_GPIOB,
+        GPIOB,
+        GPIO_Pin_11,
+        GPIO_Mode_Out_OD,
+    };
+    I2C i2c = {
+        &SCL,
+        &SDA,
+        50000,
+    };
+    GlobalI2C = &i2c;
     MPU mpu = {
+        &i2c,
         MPU6050_DEVICE_ADDRESS,
     };
-    logger("\r\nstarting MPU\r\n");
+    info("starting MPU\r\n");
     MPU_Init(&mpu);
-    logger("MPU started\r\n");
+    info("MPU started\r\n");
 
-    logger("\r\nstarting RTC\r\n");
-    RTC_Init();
-    logger("RTC started\r\n");
-
-    logger("\r\nstarting DMP\r\n");
+    info("starting DMP\r\n");
     DMP_Init();
-    logger("DMP started\r\n");
+    info("DMP started\r\n");
 
     float roll = 0, pitch = 0, yaw = 0;
     int16_t xacc, yacc, zacc, xgyro, ygyro, zgyro;
@@ -72,7 +89,6 @@ int main() {
         //                   zgyro - zgyro_offset);
 
         DMP_GetData(&pitch, &roll, &yaw);
-        Serial_SendString(&serial, "pitch:%+8.2f roll:%+8.2f yaw:%+8.2f\r",
-                          pitch, roll, yaw);
+        info("pitch:%+8.2f roll:%+8.2f yaw:%+8.2f\r", pitch, roll, yaw);
     }
 }

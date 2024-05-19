@@ -1,11 +1,23 @@
 #ifndef __SERIAL_H
 #define __SERIAL_H
 
-#include "gpio.h"
-#include "usart.h"
 #include <stdint.h>
 
-#define logger(args...) Serial_SendString(GlobalSerial, args)
+#include "gpio.h"
+#include "rtc.h"
+#include "usart.h"
+
+#define info(args...)                                                          \
+    {                                                                          \
+        Serial_SendString(GlobalSerial, "[INFO][Time %ds] ", RTC_time_s());    \
+        Serial_SendString(GlobalSerial, args);                                 \
+    }
+
+#define error(args...)                                                         \
+    {                                                                          \
+        Serial_SendString(GlobalSerial, "[ERROR][Time %ds] ", RTC_time_s());   \
+        Serial_SendString(GlobalSerial, args);                                 \
+    }
 
 typedef enum {
     None,

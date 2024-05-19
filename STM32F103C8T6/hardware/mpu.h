@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include "i2c.h"
+
 #define MPU6050_PWR_MGMT_1 ((uint8_t)0x6B)
 #define MPU6050_PWR_MGMT_2 ((uint8_t)0x6C)
 #define MPU6050_WHO_AM_I ((uint8_t)0x75)
@@ -34,7 +36,7 @@
 #define MPU6050_GYRO_ZOUT_L ((uint8_t)0x48)
 
 typedef struct {
-    // I2C *i2c;
+    I2C *i2c;
 
     uint8_t DeviceAddress;
 } MPU;

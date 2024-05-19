@@ -14,37 +14,37 @@ void DMP_Init() {
     int8_t result;
 
     result = mpu_init(NULL);
-    logger("mpu_init %s\r\n", result ? "Failed" : "succeeded");
+    info("mpu_init %s\r\n", result ? "Failed" : "succeeded");
 
     result = mpu_set_sensors(INV_XYZ_GYRO | INV_XYZ_ACCEL);
-    logger("mpu_set_sensors %s\r\n", result ? "Failed" : "succeeded");
+    info("mpu_set_sensors %s\r\n", result ? "Failed" : "succeeded");
     result = mpu_configure_fifo(INV_XYZ_GYRO | INV_XYZ_ACCEL);
-    logger("mpu_configure_fifo %s\r\n", result ? "Failed" : "succeeded");
+    info("mpu_configure_fifo %s\r\n", result ? "Failed" : "succeeded");
     result = mpu_set_sample_rate(DEFAULT_MPU_HZ);
-    logger("mpu_set_sample_rate %s\r\n", result ? "Failed" : "succeeded");
+    info("mpu_set_sample_rate %s\r\n", result ? "Failed" : "succeeded");
 
     result = dmp_load_motion_driver_firmware();
-    logger("dmp_load_motion_driver_firmware %s\r\n",
-           result ? "Failed" : "succeeded");
+    info("dmp_load_motion_driver_firmware %s\r\n",
+         result ? "Failed" : "succeeded");
 
     result =
         dmp_set_orientation(inv_orientation_matrix_to_scalar(gyro_orientation));
-    logger("dmp_set_orientation %s\r\n", result ? "Failed" : "succeeded");
+    info("dmp_set_orientation %s\r\n", result ? "Failed" : "succeeded");
     result = dmp_enable_feature(
         DMP_FEATURE_6X_LP_QUAT | DMP_FEATURE_TAP | DMP_FEATURE_ANDROID_ORIENT |
         DMP_FEATURE_SEND_RAW_ACCEL | DMP_FEATURE_SEND_CAL_GYRO |
         DMP_FEATURE_GYRO_CAL);
-    logger("dmp_enable_feature %s\r\n", result ? "Failed" : "succeeded");
+    info("dmp_enable_feature %s\r\n", result ? "Failed" : "succeeded");
 
     result = dmp_set_fifo_rate(DEFAULT_MPU_HZ);
-    logger("dmp_set_fifo_rate %s\r\n", result ? "Failed" : "succeeded");
+    info("dmp_set_fifo_rate %s\r\n", result ? "Failed" : "succeeded");
 
-    logger("runing self_test\r\n");
+    info("runing self_test\r\n");
     run_self_test();
-    logger("self_test finished");
+    info("self_test finished\r\n");
 
     result = mpu_set_dmp_state(1);
-    logger("mpu_set_dmp_state %s\r\n", result ? "Failed" : "succeeded");
+    info("mpu_set_dmp_state %s\r\n", result ? "Failed" : "succeeded");
 }
 
 void DMP_GetData(float *pitch, float *roll, float *yaw) {
@@ -55,7 +55,6 @@ void DMP_GetData(float *pitch, float *roll, float *yaw) {
     float q0 = 0.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;
 
     dmp_read_fifo(gyro, accel, quat, &sensor_timestamp, &sensors, &more);
-    // if (sensors & INV_WXYZ_QUAT) {
     q0 = quat[0] / q30;
     q1 = quat[1] / q30;
     q2 = quat[2] / q30;
@@ -67,5 +66,4 @@ void DMP_GetData(float *pitch, float *roll, float *yaw) {
     *yaw =
         atan2(2 * (q1 * q2 + q0 * q3), q0 * q0 + q1 * q1 - q2 * q2 - q3 * q3) *
         57.3;
-    // }
 }

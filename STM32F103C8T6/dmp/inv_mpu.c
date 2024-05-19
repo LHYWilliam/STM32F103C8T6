@@ -48,10 +48,10 @@
 // #include "msp430_i2c.h"
 // #include "msp430_interrupt.h"
 
-// extern I2C *GlobalI2C;
+extern I2C *GlobalI2C;
 
-#define i2c_write(a, b, c, d) I2C_Send(a, b, d, c)
-#define i2c_read(a, b, c, d) I2C_Receive(a, b, d, c)
+#define i2c_write(a, b, c, d) I2C_Send(GlobalI2C, a, b, d, c)
+#define i2c_read(a, b, c, d) I2C_Receive(GlobalI2C, a, b, d, c)
 #define delay_ms Delay_ms
 #define get_ms(a) *a = RTC_time_ms()
 // static inline int reg_int_cb(struct int_param_s *int_param) {
