@@ -4,6 +4,8 @@
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_usart.h"
 
+#include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -19,16 +21,6 @@
 
 Serial *GlobalSerial;
 I2C *GlobalI2C;
-LED *GlobalLED;
-
-uint8_t count = 0;
-uint8_t RecieveFlag = RESET;
-
-PackType type = None;
-
-uint8_t byte;
-uint8_t HexData[32];
-char StringData[32];
 
 int main() {
     RTC_Init();
@@ -76,7 +68,6 @@ int main() {
         &gpio,
         HIGH,
     };
-    GlobalLED = &led;
     info("starting LED interrupt\r\n");
     LED_Init(&led);
     info("LED started\r\n");
@@ -86,62 +77,56 @@ int main() {
     Controller_Init(&controller);
     info("Controller started\r\n");
 
+    uint8_t temp = 114;
+    Controller_Add(&controller, "temp", &temp, DATA);
     Controller_Add(&controller, "LED_Turn", LED_Turn, FUNCTION);
 
     for (;;) {
-        if (RecieveFlag == SET) {
-            if (type == ByteData) {
-                info("received %c\r\n", byte);
-            } else if (type == HexPack) {
-            } else if (type == StringPack) {
-                info("received %s\r\n", StringData);
-                char *goal = strtok(StringData, " ");
+        if (serial.RecieveFlag == SET) {
+            if (serial.type == Byte) {
+                info("received %c\r\n", Byte);
+            } else if (serial.type == HexPack) {
+            } else if (serial.type == StringPack) {
+                info("received %s\r\n", serial.StringData);
+                char *goal = strtok(serial.StringData, " ");
+                if (strcmp(goal, "set") == 0) {
+                    goal = strtok(NULL, " ");
+                    if (strcmp(goal, "temp")) {
+                        uint8_t *data =
+                            Controller_Eval(&controller, goal, DATA);
+                        goal = strtok(NULL, " ");
+                        sscanf(goal, "%hhu", data);
 
-                if (strcmp(goal, "call") == 0) {
+                        info("set %s to %d", goal, *data);
+                    }
+
+                } else if (strcmp(goal, "call") == 0) {
                     goal = strtok(NULL, " ");
 
                     if (strcmp(goal, "LED_Turn") == 0) {
                         ((void (*)(LED *))Controller_Eval(&controller, goal,
                                                           FUNCTION))(&led);
+                        info("call %s succeeeded\r\n", goal);
                     }
+                } else if (strcmp(goal, "show") == 0) {
+                    goal = strtok(NULL, " ");
+
+                    info("%s: %d\r\n", goal,
+                         *(uint8_t *)Controller_Eval(&controller, goal, DATA))
                 }
             }
 
-            count = 0;
-            type = None;
-            RecieveFlag = RESET;
+            serial.count = 0;
+            serial.type = None;
+            serial.RecieveFlag = RESET;
         }
     }
 }
 
 void USART1_IRQHandler(void) {
     if (USART_GetITStatus(USART1, USART_IT_RXNE) == SET) {
-        byte = USART_ReceiveData(USART1);
 
-        if (type == None) {
-            if (byte == 0xFF) {
-                type = HexPack;
-            } else if (byte == '>') {
-                type = StringPack;
-            } else {
-                type = ByteData;
-                RecieveFlag = SET;
-            }
-        } else if (type == HexPack) {
-            if (byte == 0xFE) {
-                RecieveFlag = SET;
-            } else {
-                HexData[count++] = byte;
-            }
-        } else if (type == StringPack) {
-            if (count >= 1 && byte == '\n' && StringData[count - 1] == '\r') {
-                StringData[--count] = '\0';
-
-                RecieveFlag = SET;
-            } else {
-                StringData[count++] = byte;
-            }
-        }
+        Serial_Parse(GlobalSerial);
 
         USART_ClearITPendingBit(USART1, USART_IT_RXNE);
     }
