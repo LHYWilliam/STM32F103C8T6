@@ -21,8 +21,6 @@ Serial *GlobalSerial;
 I2C *GlobalI2C;
 LED *GlobalLED;
 
-void Controller_LED_Turn(void) { LED_Turn(GlobalLED); }
-
 uint8_t count = 0;
 uint8_t RecieveFlag = RESET;
 
@@ -88,8 +86,7 @@ int main() {
     Controller_Init(&controller);
     info("Controller started\r\n");
 
-    Controller_AddFunction(&controller, "Controller_LED_Turn",
-                           Controller_LED_Turn);
+    Controller_Add(&controller, "LED_Turn", LED_Turn, FUNCTION);
 
     for (;;) {
         if (RecieveFlag == SET) {
@@ -102,7 +99,11 @@ int main() {
 
                 if (strcmp(goal, "call") == 0) {
                     goal = strtok(NULL, " ");
-                    Controller_Call(&controller, goal);
+
+                    if (strcmp(goal, "LED_Turn") == 0) {
+                        ((void (*)(LED *))Controller_Eval(&controller, goal,
+                                                          FUNCTION))(&led);
+                    }
                 }
             }
 

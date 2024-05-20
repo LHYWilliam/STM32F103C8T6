@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+typedef enum { DATA, FUNCTION } EvalType;
+
 #define MAX_SIZE 32
 
 typedef struct {
@@ -12,15 +14,13 @@ typedef struct {
 
     uint8_t function_count;
     char function_names[MAX_SIZE][MAX_SIZE];
-    void (*function_addresses[MAX_SIZE])(void);
+    void *function_addresses[MAX_SIZE];
 } Controller;
 
 void Controller_Init(Controller *controller);
-void Controller_AddData(Controller *controller, char *data_name,
-                        uint8_t *data_address);
-void Controller_AddFunction(Controller *controller, char *function_name,
-                            void (*function_address)(void));
-uint8_t Controller_Set(Controller *controller, char *data_name, uint8_t value);
-uint8_t Controller_Call(Controller *controller, char *function_name);
+
+void Controller_Add(Controller *controller, char *name, void *address,
+                    EvalType type);
+void *Controller_Eval(Controller *controller, char *name, EvalType type);
 
 #endif
