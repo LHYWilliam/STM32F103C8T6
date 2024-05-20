@@ -6,6 +6,8 @@
 #include "dmp.h"
 #include "serial.h"
 
+#define DMP_SELFTEST
+
 extern Serial *GlobalSerial;
 
 static signed char gyro_orientation[9] = {-1, 0, 0, 0, -1, 0, 0, 0, 1};
@@ -13,35 +15,63 @@ static signed char gyro_orientation[9] = {-1, 0, 0, 0, -1, 0, 0, 0, 1};
 void DMP_Init() {
     int8_t result;
 
-    result = mpu_init(NULL);
-    info("mpu_init %s\r\n", result ? "Failed" : "succeeded");
+    if (result = mpu_init(NULL), result == 0) {
+        info("mpu_init succeeded\r\n");
+    } else {
+        error("mpu_init failed %d\r\n", result);
+    }
 
-    result = mpu_set_sensors(INV_XYZ_GYRO | INV_XYZ_ACCEL);
-    info("mpu_set_sensors %s\r\n", result ? "Failed" : "succeeded");
-    result = mpu_configure_fifo(INV_XYZ_GYRO | INV_XYZ_ACCEL);
-    info("mpu_configure_fifo %s\r\n", result ? "Failed" : "succeeded");
-    result = mpu_set_sample_rate(DEFAULT_MPU_HZ);
-    info("mpu_set_sample_rate %s\r\n", result ? "Failed" : "succeeded");
+    if (result = mpu_set_sensors(INV_XYZ_GYRO | INV_XYZ_ACCEL), result == 0) {
+        info("mpu_set_sensors succeeded\r\n")
+    } else {
+        error("mpu_set_sensors failed %d\r\n", result);
+    }
+    if (result = mpu_configure_fifo(INV_XYZ_GYRO | INV_XYZ_ACCEL),
+        result == 0) {
+        info("mpu_configure_fifo succeeded\r\n");
+    } else {
+        error("mpu_configure_fifo failed %d\r\n", result);
+    }
+    if (result = mpu_set_sample_rate(DEFAULT_MPU_HZ), result == 0) {
+        info("mpu_set_sample_rate succeeded\r\n");
+    } else {
+        error("mpu_set_sample_rate failed %d\r\n", result);
+    }
 
-    result = dmp_load_motion_driver_firmware();
-    info("dmp_load_motion_driver_firmware %s\r\n",
-         result ? "Failed" : "succeeded");
+    if (result = dmp_load_motion_driver_firmware(), result == 0) {
+        info("dmp_load_motion_driver_firmware succeeded\r\n");
+    } else {
+        error("dmp_load_motion_driver_firmware failed %d\r\n", result);
+    }
 
-    result =
-        dmp_set_orientation(inv_orientation_matrix_to_scalar(gyro_orientation));
-    info("dmp_set_orientation %s\r\n", result ? "Failed" : "succeeded");
-    result = dmp_enable_feature(
-        DMP_FEATURE_6X_LP_QUAT | DMP_FEATURE_TAP | DMP_FEATURE_ANDROID_ORIENT |
-        DMP_FEATURE_SEND_RAW_ACCEL | DMP_FEATURE_SEND_CAL_GYRO |
-        DMP_FEATURE_GYRO_CAL);
-    info("dmp_enable_feature %s\r\n", result ? "Failed" : "succeeded");
+    if (result = dmp_set_orientation(
+            inv_orientation_matrix_to_scalar(gyro_orientation)),
+        result == 0) {
+        info("dmp_set_orientation succeeded\r\n");
+    } else {
+        error("dmp_set_orientation failed %d\r\n", result);
+    }
+    if (result = dmp_enable_feature(
+            DMP_FEATURE_6X_LP_QUAT | DMP_FEATURE_TAP |
+            DMP_FEATURE_ANDROID_ORIENT | DMP_FEATURE_SEND_RAW_ACCEL |
+            DMP_FEATURE_SEND_CAL_GYRO | DMP_FEATURE_GYRO_CAL),
+        result == 0) {
+        info("dmp_enable_feature succeeded\r\n");
+    } else {
+        error("dmp_enable_feature failed %d\r\n", result);
+    }
 
-    result = dmp_set_fifo_rate(DEFAULT_MPU_HZ);
-    info("dmp_set_fifo_rate %s\r\n", result ? "Failed" : "succeeded");
+    if (result = dmp_set_fifo_rate(DEFAULT_MPU_HZ), result == 0) {
+        info("dmp_set_fifo_rate succeeded\r\n");
+    } else {
+        error("dmp_set_fifo_rate failed %d\r\n", result);
+    }
 
+#ifdef DMP_SELFTEST
     info("runing self_test\r\n");
     run_self_test();
     info("self_test finished\r\n");
+#endif
 
     result = mpu_set_dmp_state(1);
     info("mpu_set_dmp_state %s\r\n", result ? "Failed" : "succeeded");

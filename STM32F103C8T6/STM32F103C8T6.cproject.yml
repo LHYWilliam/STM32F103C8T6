@@ -58,6 +58,8 @@ project:
         - file: util/pwmi.c
         - file: util/serial.h
         - file: util/serial.c
+        - file: util/controller.h
+        - file: util/controller.c
 
     - group: dmp
       files:
