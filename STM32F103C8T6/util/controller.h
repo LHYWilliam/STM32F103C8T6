@@ -10,7 +10,7 @@ typedef enum { DATA, FUNCTION } EvalType;
 typedef struct {
     uint8_t data_count;
     char data_names[MAX_SIZE][MAX_SIZE];
-    uint8_t *data_addresses[MAX_SIZE];
+    void *data_addresses[MAX_SIZE];
 
     uint8_t function_count;
     char function_names[MAX_SIZE][MAX_SIZE];

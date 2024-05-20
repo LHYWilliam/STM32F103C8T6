@@ -83,7 +83,7 @@ int main() {
     Controller_Init(&controller);
     info("Controller started\r\n");
 
-    uint8_t temp = 114;
+    float temp = 114.;
     Controller_Add(&controller, "temp", &temp, DATA);
     Controller_Add(&controller, "LED_Turn", LED_Turn, FUNCTION);
 
@@ -118,12 +118,11 @@ void SerialReceive_Handler(void) {
             if (strcmp(goal, "set") == 0) {
                 goal = strtok(NULL, " ");
                 if (strcmp(goal, "temp") == 0) {
-                    uint8_t *data =
-                        Controller_Eval(GlobalController, goal, DATA);
+                    float *data = Controller_Eval(GlobalController, goal, DATA);
                     goal = strtok(NULL, " ");
-                    sscanf(goal, "%hhu", data);
+                    sscanf(goal, "%f", data);
 
-                    info("set temp to %d\r\n", *data);
+                    info("set temp to %f\r\n", *data);
                 }
 
             } else if (strcmp(goal, "call") == 0) {
@@ -137,8 +136,8 @@ void SerialReceive_Handler(void) {
             } else if (strcmp(goal, "show") == 0) {
                 goal = strtok(NULL, " ");
 
-                info("%s: %d\r\n", goal,
-                     *(uint8_t *)Controller_Eval(GlobalController, goal, DATA))
+                info("%s: %f\r\n", goal,
+                     *(float *)Controller_Eval(GlobalController, goal, DATA))
             }
             break;
 

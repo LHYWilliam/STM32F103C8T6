@@ -12,7 +12,7 @@ void Controller_Add(Controller *controller, char *name, void *address,
                     EvalType type) {
     if (type == DATA) {
         strcpy(controller->data_names[controller->data_count], name);
-        controller->data_addresses[controller->data_count] = (uint8_t *)address;
+        controller->data_addresses[controller->data_count] = address;
         controller->data_count++;
     } else if (type == FUNCTION) {
         strcpy(controller->function_names[controller->function_count], name);
