@@ -55,7 +55,9 @@ void Serial_SendStringPack(Serial *serial, char *string) {
 void Serial_Parse(Serial *serial) {
     serial->ByteData = USART_ReceiveData(USART1);
 
-    if (serial->type == None) {
+    switch (serial->type) {
+    case None:
+
         if (serial->ByteData == 0xFF) {
             serial->type = HexPack;
         } else if (serial->ByteData == '>') {
@@ -64,13 +66,17 @@ void Serial_Parse(Serial *serial) {
             serial->type = Byte;
             serial->RecieveFlag = SET;
         }
-    } else if (serial->type == HexPack) {
+        break;
+
+    case HexPack:
         if (serial->ByteData == 0xFE) {
             serial->RecieveFlag = SET;
         } else {
             serial->HexData[serial->count++] = serial->ByteData;
         }
-    } else if (serial->type == StringPack) {
+        break;
+
+    case StringPack:
         if (serial->count >= 1 && serial->ByteData == '\n' &&
             serial->StringData[serial->count - 1] == '\r') {
             serial->StringData[--serial->count] = '\0';
@@ -79,5 +85,9 @@ void Serial_Parse(Serial *serial) {
         } else {
             serial->StringData[serial->count++] = serial->ByteData;
         }
+        break;
+
+    default:
+        break;
     }
 }

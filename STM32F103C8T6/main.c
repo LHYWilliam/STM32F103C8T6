@@ -19,8 +19,12 @@
 
 #define MPU6050_DEVICE_ADDRESS ((uint8_t)0x68)
 
-Serial *GlobalSerial;
+LED *GlobalLED;
 I2C *GlobalI2C;
+Serial *GlobalSerial;
+Controller *GlobalController;
+
+void SerialReceive_Handler(void);
 
 int main() {
     RTC_Init();
@@ -68,11 +72,13 @@ int main() {
         &gpio,
         HIGH,
     };
+    GlobalLED = &led;
     info("starting LED interrupt\r\n");
     LED_Init(&led);
     info("LED started\r\n");
 
     Controller controller;
+    GlobalController = &controller;
     info("starting Controller interrupt\r\n");
     Controller_Init(&controller);
     info("Controller started\r\n");
@@ -82,44 +88,7 @@ int main() {
     Controller_Add(&controller, "LED_Turn", LED_Turn, FUNCTION);
 
     for (;;) {
-        if (serial.RecieveFlag == SET) {
-            if (serial.type == Byte) {
-                info("received %c\r\n", Byte);
-            } else if (serial.type == HexPack) {
-            } else if (serial.type == StringPack) {
-                info("received %s\r\n", serial.StringData);
-                char *goal = strtok(serial.StringData, " ");
-                if (strcmp(goal, "set") == 0) {
-                    goal = strtok(NULL, " ");
-                    if (strcmp(goal, "temp")) {
-                        uint8_t *data =
-                            Controller_Eval(&controller, goal, DATA);
-                        goal = strtok(NULL, " ");
-                        sscanf(goal, "%hhu", data);
-
-                        info("set %s to %d", goal, *data);
-                    }
-
-                } else if (strcmp(goal, "call") == 0) {
-                    goal = strtok(NULL, " ");
-
-                    if (strcmp(goal, "LED_Turn") == 0) {
-                        ((void (*)(LED *))Controller_Eval(&controller, goal,
-                                                          FUNCTION))(&led);
-                        info("call %s succeeeded\r\n", goal);
-                    }
-                } else if (strcmp(goal, "show") == 0) {
-                    goal = strtok(NULL, " ");
-
-                    info("%s: %d\r\n", goal,
-                         *(uint8_t *)Controller_Eval(&controller, goal, DATA))
-                }
-            }
-
-            serial.count = 0;
-            serial.type = None;
-            serial.RecieveFlag = RESET;
-        }
+        SerialReceive_Handler();
     }
 }
 
@@ -129,5 +98,56 @@ void USART1_IRQHandler(void) {
         Serial_Parse(GlobalSerial);
 
         USART_ClearITPendingBit(USART1, USART_IT_RXNE);
+    }
+}
+
+void SerialReceive_Handler(void) {
+    if (GlobalSerial->RecieveFlag == SET) {
+        switch (GlobalSerial->type) {
+        case Byte:
+            info("received %c\r\n", GlobalSerial->ByteData);
+            break;
+
+        case HexPack:
+            break;
+
+        case StringPack:
+            info("received %s\r\n", GlobalSerial->StringData);
+
+            char *goal = strtok(GlobalSerial->StringData, " ");
+            if (strcmp(goal, "set") == 0) {
+                goal = strtok(NULL, " ");
+                if (strcmp(goal, "temp") == 0) {
+                    uint8_t *data =
+                        Controller_Eval(GlobalController, goal, DATA);
+                    goal = strtok(NULL, " ");
+                    sscanf(goal, "%hhu", data);
+
+                    info("set temp to %d\r\n", *data);
+                }
+
+            } else if (strcmp(goal, "call") == 0) {
+                goal = strtok(NULL, " ");
+
+                if (strcmp(goal, "LED_Turn") == 0) {
+                    ((void (*)(LED *))Controller_Eval(GlobalController, goal,
+                                                      FUNCTION))(GlobalLED);
+                    info("call %s succeeeded\r\n", goal);
+                }
+            } else if (strcmp(goal, "show") == 0) {
+                goal = strtok(NULL, " ");
+
+                info("%s: %d\r\n", goal,
+                     *(uint8_t *)Controller_Eval(GlobalController, goal, DATA))
+            }
+            break;
+
+        default:
+            break;
+        }
+
+        GlobalSerial->count = 0;
+        GlobalSerial->type = None;
+        GlobalSerial->RecieveFlag = RESET;
     }
 }
