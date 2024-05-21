@@ -20,6 +20,7 @@ typedef struct {
 } ADC;
 
 void ADC_Init_(ADC *adc);
+
 uint16_t ADC_Get(ADC *adc);
 
 #endif

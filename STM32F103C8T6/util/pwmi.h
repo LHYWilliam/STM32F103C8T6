@@ -13,6 +13,7 @@ typedef struct {
 } PWMI;
 
 void PWMI_Init(PWMI *pwmi);
+
 uint16_t PWMI_GetFrequency(PWMI *pwmi);
 uint16_t PWMI_GetDuty(PWMI *pwmi);
 

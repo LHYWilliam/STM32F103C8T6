@@ -22,7 +22,7 @@ void DMP_Init() {
     }
 
     if (result = mpu_set_sensors(INV_XYZ_GYRO | INV_XYZ_ACCEL), result == 0) {
-        info("mpu_set_sensors succeeded\r\n")
+        info("mpu_set_sensors succeeded\r\n");
     } else {
         error("mpu_set_sensors failed %d\r\n", result);
     }

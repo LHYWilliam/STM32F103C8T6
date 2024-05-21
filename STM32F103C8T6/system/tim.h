@@ -22,6 +22,7 @@ typedef struct {
 } TIM;
 
 void TIM_Init(TIM *tim, ClockSource_Config *config);
+
 void TIM_InternalClock(TIM_TypeDef *TIMx, ClockSource_Config *config);
 void TIM_ETRClockMode2(TIM_TypeDef *TIMx, ClockSource_Config *config);
 

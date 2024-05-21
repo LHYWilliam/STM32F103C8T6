@@ -8,6 +8,7 @@ typedef struct {
 } Servo;
 
 void Servo_Init(Servo *servo);
+
 void Servo_SetAngel(Servo *servo, float angel);
 
 #endif

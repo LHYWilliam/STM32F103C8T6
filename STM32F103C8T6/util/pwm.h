@@ -13,6 +13,7 @@ typedef struct {
 } PWM;
 
 void PWM_Init(PWM *pwm);
+
 void PWM_SetPrescaler(PWM *pwm, uint16_t val);
 void PWM_SetPulse(PWM *pwm, uint16_t val);
 

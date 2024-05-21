@@ -1,6 +1,5 @@
 #include "stdarg.h"
 #include "stdio.h"
-#include "string.h"
 #include <stdint.h>
 
 #include "serial.h"
@@ -81,6 +80,8 @@ void Serial_Parse(Serial *serial) {
         if (serial->count >= 1 && serial->ByteData == '\r') {
             serial->StringData[serial->count] = '\0';
             serial->RecieveFlag = SET;
+        } else if (serial->ByteData == 0x08) {
+            serial->count--;
         } else {
             serial->StringData[serial->count++] = serial->ByteData;
         }

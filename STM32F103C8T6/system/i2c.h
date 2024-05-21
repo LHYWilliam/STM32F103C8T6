@@ -27,13 +27,17 @@ typedef struct {
 } I2C;
 
 void I2C_Init_(I2C *i2c);
+
 void I2C_Start(I2C *i2c);
 void I2C_Stop(I2C *i2c);
+
 void I2C_SendByte(I2C *i2c, uint8_t txd);
 uint8_t I2C_ReceiveByte(I2C *i2c, unsigned char ack);
+
 uint8_t I2C_WaitAck(I2C *i2c);
 void I2C_Ack(I2C *i2c);
 void I2C_NoAck(I2C *i2c);
+
 void I2C_Delay(I2C *i2c);
 
 uint8_t I2C_Send(I2C *i2c, uint8_t addr, uint8_t reg, const uint8_t *buf,

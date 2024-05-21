@@ -129,7 +129,7 @@ void Serial_ReceiveHandler(Serial *serial, Controller *controller) {
 
                 if (strcmp(Body, "temp") == 0) {
                     info("%s: %d\r\n", Body,
-                         *(uint8_t *)Controller_Eval(controller, Body, DATA))
+                         *(uint8_t *)Controller_Eval(controller, Body, DATA));
                 } else {
                     error("unknow command\r\n");
                 }

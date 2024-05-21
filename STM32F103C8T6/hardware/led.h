@@ -12,6 +12,7 @@ typedef struct {
 } LED;
 
 void LED_Init(LED *led);
+
 void LED_On(LED *led);
 void LED_Off(LED *led);
 void LED_Turn(LED *led);

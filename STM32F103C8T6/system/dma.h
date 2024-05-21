@@ -24,6 +24,7 @@ typedef struct {
 } DMA;
 
 void DMA_Init_(DMA *dma);
+
 void DMA_Enable(DMA *dma);
 void DMA_Disable(DMA *dma);
 

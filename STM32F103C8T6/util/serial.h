@@ -8,16 +8,16 @@
 #include "usart.h"
 
 #define info(args...)                                                          \
-    {                                                                          \
+    do {                                                                       \
         Serial_SendString(GlobalSerial, "[INFO][Time %ds] ", RTC_time_s());    \
         Serial_SendString(GlobalSerial, args);                                 \
-    }
+    } while (0)
 
 #define error(args...)                                                         \
-    {                                                                          \
+    do {                                                                       \
         Serial_SendString(GlobalSerial, "[ERROR][Time %ds] ", RTC_time_s());   \
         Serial_SendString(GlobalSerial, args);                                 \
-    }
+    } while (0)
 
 typedef enum {
     None,
