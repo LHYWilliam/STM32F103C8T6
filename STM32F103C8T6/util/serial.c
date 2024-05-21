@@ -1,5 +1,6 @@
 #include "stdarg.h"
 #include "stdio.h"
+#include "string.h"
 #include <stdint.h>
 
 #include "serial.h"
@@ -77,10 +78,8 @@ void Serial_Parse(Serial *serial) {
         break;
 
     case StringPack:
-        if (serial->count >= 1 && serial->ByteData == '\n' &&
-            serial->StringData[serial->count - 1] == '\r') {
-            serial->StringData[--serial->count] = '\0';
-
+        if (serial->count >= 1 && serial->ByteData == '\r') {
+            serial->StringData[serial->count] = '\0';
             serial->RecieveFlag = SET;
         } else {
             serial->StringData[serial->count++] = serial->ByteData;
@@ -90,4 +89,10 @@ void Serial_Parse(Serial *serial) {
     default:
         break;
     }
+}
+
+void Serial_Clear(Serial *serial) {
+    serial->count = 0;
+    serial->type = None;
+    serial->RecieveFlag = RESET;
 }

@@ -42,11 +42,16 @@ typedef struct {
 } Serial;
 
 void Serial_Init(Serial *serial);
+
 void Serial_SendByte(Serial *serial, uint8_t byte);
 void Serial_SendHex(Serial *serial, uint8_t byte);
 void Serial_SendString(Serial *serial, char *format, ...);
+
 void Serial_SendHexPack(Serial *serial, uint8_t *array, uint16_t length);
 void Serial_SendStringPack(Serial *serial, char *string);
+
 void Serial_Parse(Serial *serial);
+
+void Serial_Clear(Serial *serial);
 
 #endif

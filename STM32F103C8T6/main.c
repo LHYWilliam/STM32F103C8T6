@@ -12,19 +12,16 @@
 #include "gpio.h"
 #include "i2c.h"
 #include "interrupt.h"
-#include "led.h"
 #include "rtc.h"
 #include "serial.h"
 #include "usart.h"
 
-#define MPU6050_DEVICE_ADDRESS ((uint8_t)0x68)
-
-LED *GlobalLED;
 I2C *GlobalI2C;
 Serial *GlobalSerial;
 Controller *GlobalController;
 
-void SerialReceive_Handler(void);
+void Serial_ReceiveHandler(Serial *serial, Controller *controller);
+void Controller_WatchHandler(Controller *controller, Serial *serial);
 
 int main() {
     RTC_Init();
@@ -53,6 +50,8 @@ int main() {
     };
     GlobalSerial = &serial;
     Serial_Init(&serial);
+    Serial_SendString(
+        &serial, "\r\n------------------------------------------------\r\n");
     info("Serial started\r\n");
 
     USART_Interrupt interrupt = {
@@ -62,33 +61,21 @@ int main() {
     USART_Interrupt_Init(&interrupt);
     info("USART interrupt started\r\n");
 
-    GPIO gpio = {
-        RCC_APB2Periph_GPIOA,
-        GPIOA,
-        GPIO_Pin_0,
-        GPIO_Mode_Out_PP,
-    };
-    LED led = {
-        &gpio,
-        HIGH,
-    };
-    GlobalLED = &led;
-    info("starting LED interrupt\r\n");
-    LED_Init(&led);
-    info("LED started\r\n");
-
     Controller controller;
     GlobalController = &controller;
-    info("starting Controller interrupt\r\n");
+    info("starting Controller\r\n");
     Controller_Init(&controller);
     info("Controller started\r\n");
 
-    float temp = 114.;
+    uint8_t WatchState = DISABLE;
+    uint8_t temp = 114;
     Controller_Add(&controller, "temp", &temp, DATA);
-    Controller_Add(&controller, "LED_Turn", LED_Turn, FUNCTION);
+    Controller_Add(&controller, "WatchState", &WatchState, DATA);
 
     for (;;) {
-        SerialReceive_Handler();
+        if (WatchState) {
+            Controller_WatchHandler(&controller, &serial);
+        }
     }
 }
 
@@ -96,48 +83,66 @@ void USART1_IRQHandler(void) {
     if (USART_GetITStatus(USART1, USART_IT_RXNE) == SET) {
 
         Serial_Parse(GlobalSerial);
+        Serial_ReceiveHandler(GlobalSerial, GlobalController);
 
         USART_ClearITPendingBit(USART1, USART_IT_RXNE);
     }
 }
 
-void SerialReceive_Handler(void) {
-    if (GlobalSerial->RecieveFlag == SET) {
-        switch (GlobalSerial->type) {
+void Serial_ReceiveHandler(Serial *serial, Controller *controller) {
+    if (serial->RecieveFlag == SET) {
+        switch (serial->type) {
         case Byte:
-            info("received %c\r\n", GlobalSerial->ByteData);
+            Serial_SendString(serial, "\r");
+            info("received Byte [%d]\r\n", serial->ByteData);
+
+            if (serial->ByteData == 0x0D) {
+                *(uint8_t *)Controller_Eval(controller, "WatchState", DATA) =
+                    DISABLE;
+            }
             break;
 
         case HexPack:
             break;
 
         case StringPack:
-            info("received %s\r\n", GlobalSerial->StringData);
+            info("receive command [>%s]\r\n", serial->StringData);
 
-            char *goal = strtok(GlobalSerial->StringData, " ");
-            if (strcmp(goal, "set") == 0) {
-                goal = strtok(NULL, " ");
-                if (strcmp(goal, "temp") == 0) {
-                    float *data = Controller_Eval(GlobalController, goal, DATA);
-                    goal = strtok(NULL, " ");
-                    sscanf(goal, "%f", data);
+            char *Head = strtok(serial->StringData, " ");
+            if (strcmp(Head, "set") == 0) {
+                char *Body = strtok(NULL, " ");
 
-                    info("set temp to %f\r\n", *data);
+                if (strcmp(Body, "temp") == 0) {
+                    char *input = strtok(NULL, " ");
+                    sscanf(
+                        input, "%hhu",
+                        (uint8_t *)Controller_Eval(controller, "temp", DATA));
+                    info("successfully set %s to %d\r\n", Body,
+                         *(uint8_t *)Controller_Eval(controller, "temp", DATA));
+                } else {
+                    error("unknow command\r\n");
                 }
 
-            } else if (strcmp(goal, "call") == 0) {
-                goal = strtok(NULL, " ");
+            } else if (strcmp(Head, "call") == 0) {
+            } else if (strcmp(Head, "show") == 0) {
+                char *Body = strtok(NULL, " ");
 
-                if (strcmp(goal, "LED_Turn") == 0) {
-                    ((void (*)(LED *))Controller_Eval(GlobalController, goal,
-                                                      FUNCTION))(GlobalLED);
-                    info("call %s succeeeded\r\n", goal);
+                if (strcmp(Body, "temp") == 0) {
+                    info("%s: %d\r\n", Body,
+                         *(uint8_t *)Controller_Eval(controller, Body, DATA))
+                } else {
+                    error("unknow command\r\n");
                 }
-            } else if (strcmp(goal, "show") == 0) {
-                goal = strtok(NULL, " ");
 
-                info("%s: %f\r\n", goal,
-                     *(float *)Controller_Eval(GlobalController, goal, DATA))
+            } else if (strcmp(Head, "watch") == 0) {
+                *(uint8_t *)Controller_Eval(controller, "WatchState", DATA) =
+                    ENABLE;
+
+            } else if (strcmp(Head, "reset") == 0) {
+                info("call reset succeeeded\r\n");
+                NVIC_SystemReset();
+            } else {
+                error("unknow command\r\n");
             }
             break;
 
@@ -145,8 +150,12 @@ void SerialReceive_Handler(void) {
             break;
         }
 
-        GlobalSerial->count = 0;
-        GlobalSerial->type = None;
-        GlobalSerial->RecieveFlag = RESET;
+        Serial_Clear(serial);
     }
+}
+
+void Controller_WatchHandler(Controller *controller, Serial *serial) {
+    Serial_SendString(serial, "\r[WATCH][Time %ds] ", RTC_time_s());
+    Serial_SendString(serial, "temp: %d ",
+                      *(uint8_t *)Controller_Eval(controller, "temp", DATA));
 }

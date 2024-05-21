@@ -60,6 +60,8 @@ project:
         - file: util/serial.c
         - file: util/controller.h
         - file: util/controller.c
+        - file: util/pid.h
+        - file: util/pid.c
 
     - group: dmp
       files:

@@ -1,7 +1,7 @@
-#include "string.h"
+#include <stdint.h>
+#include <string.h>
 
 #include "controller.h"
-#include <stdint.h>
 
 void Controller_Init(Controller *controller) {
     controller->data_count = 0;
