@@ -77,6 +77,10 @@ void Serial_Parse(Serial *serial) {
         break;
 
     case StringPack:
+        // if (serial->count >= 1 &&
+        //     serial->StringData[serial->count - 1] == '\r' &&
+        //     serial->ByteData == '\n') {
+        //     serial->StringData[serial->count - 1] = '\0';
         if (serial->count >= 1 && serial->ByteData == '\r') {
             serial->StringData[serial->count] = '\0';
             serial->RecieveFlag = SET;
