@@ -1,9 +1,10 @@
+#include "stm32f10x_tim.h"
+
 #include <stdlib.h>
 
 #include "capture.h"
 #include "encoder.h"
 #include "gpio.h"
-#include "stm32f10x_tim.h"
 #include "tim.h"
 
 void Encoder_Init(Encoder *encoder) {

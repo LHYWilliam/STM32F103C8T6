@@ -85,15 +85,18 @@ void DMP_GetData(float *pitch, float *roll, float *yaw) {
     float q0 = 0.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;
 
     dmp_read_fifo(gyro, accel, quat, &sensor_timestamp, &sensors, &more);
-    q0 = quat[0] / q30;
-    q1 = quat[1] / q30;
-    q2 = quat[2] / q30;
-    q3 = quat[3] / q30;
+    if (sensors & INV_WXYZ_QUAT) {
+        q0 = quat[0] / q30;
+        q1 = quat[1] / q30;
+        q2 = quat[2] / q30;
+        q3 = quat[3] / q30;
 
-    *pitch = asin(-2 * q1 * q3 + 2 * q0 * q2) * 57.3;
-    *roll =
-        atan2(2 * q2 * q3 + 2 * q0 * q1, -2 * q1 * q1 - 2 * q2 * q2 + 1) * 57.3;
-    *yaw =
-        atan2(2 * (q1 * q2 + q0 * q3), q0 * q0 + q1 * q1 - q2 * q2 - q3 * q3) *
-        57.3;
+        *pitch = asin(-2 * q1 * q3 + 2 * q0 * q2) * 57.3;
+        *roll =
+            atan2(2 * q2 * q3 + 2 * q0 * q1, -2 * q1 * q1 - 2 * q2 * q2 + 1) *
+            57.3;
+        *yaw = atan2(2 * (q1 * q2 + q0 * q3),
+                     q0 * q0 + q1 * q1 - q2 * q2 - q3 * q3) *
+               57.3;
+    }
 }
