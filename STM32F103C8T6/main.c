@@ -26,8 +26,8 @@ I2C *GlobalI2C;
 Serial *GlobalSerial;
 Controller *GlobalController;
 
-void Serial_ReceiveHandler(Serial *serial, Controller *controller);
-void Controller_WatchHandler(Controller *controller, Serial *serial);
+void ReceiveHandler(Serial *serial, Controller *controller);
+void WatchHandler(Controller *controller, Serial *serial);
 
 uint8_t WatchState = DISABLE;
 
@@ -72,10 +72,42 @@ int main() {
     USART_Interrupt_Init(&interrupt);
     info("USART interrupt started\r\n");
 
-    TIM tim2 = {
-        RCC_APB1Periph_TIM2, TIM2, TIM_InternalClock, 7200 - 1, 1000 - 1, CMD,
+    GPIO SCL = {
+        RCC_APB2Periph_GPIOB,
+        GPIOB,
+        GPIO_Pin_10,
+        GPIO_Mode_Out_OD,
     };
+    GPIO SDA = {
+        RCC_APB2Periph_GPIOB,
+        GPIOB,
+        GPIO_Pin_11,
+        GPIO_Mode_Out_OD,
+    };
+    I2C i2c = {
+        &SCL,
+        &SDA,
+        50000,
+    };
+    GlobalI2C = &i2c;
+    MPU mpu = {
+        &i2c,
+        MPU6050_DEVICE_ADDRESS,
+    };
+    info("starting MPU\r\n");
+    MPU_Init(&mpu);
+    info("MPU started\r\n");
+
+    info("starting DMP\r\n");
+    DMP_Init();
+    info("DMP started\r\n");
+
+    TIM tim2 = {
+        RCC_APB1Periph_TIM2, TIM2, TIM_InternalClock, 7200 - 1, 100 - 1, CMD,
+    };
+    info("starting TIM2\r\n");
     TIM_Init(&tim2, NULL);
+    info("TIM2 started\r\n");
 
     TIM_Interrupt TIM_interrupt = {
         TIM2, TIM2_IRQn, NVIC_PriorityGroup_2, 1, 1,
@@ -136,36 +168,6 @@ int main() {
     Encoder_Init(&encoder_right);
     info("encoder_right started\r\n");
 
-    GPIO SCL = {
-        RCC_APB2Periph_GPIOB,
-        GPIOB,
-        GPIO_Pin_10,
-        GPIO_Mode_Out_OD,
-    };
-    GPIO SDA = {
-        RCC_APB2Periph_GPIOB,
-        GPIOB,
-        GPIO_Pin_11,
-        GPIO_Mode_Out_OD,
-    };
-    I2C i2c = {
-        &SCL,
-        &SDA,
-        50000,
-    };
-    GlobalI2C = &i2c;
-    MPU mpu = {
-        &i2c,
-        MPU6050_DEVICE_ADDRESS,
-    };
-    info("starting MPU\r\n");
-    MPU_Init(&mpu);
-    info("MPU started\r\n");
-
-    info("starting DMP\r\n");
-    DMP_Init();
-    info("DMP started\r\n");
-
     Controller controller;
     GlobalController = &controller;
     info("starting Controller\r\n");
@@ -177,10 +179,6 @@ int main() {
     Controller_Add(&controller, "speed_right", &speed_right, DATA);
 
     for (;;) {
-        if (WatchState) {
-            Controller_WatchHandler(&controller, &serial);
-        }
-        DMP_GetData(&pitch, &roll, &yaw);
     }
 }
 
@@ -193,6 +191,12 @@ void TIM2_IRQHandler(void) {
         speed_right = (int16_t)TIM_GetCounter(TIM4);
         TIM_SetCounter(TIM4, 0);
 
+        DMP_GetData(&pitch, &roll, &yaw);
+
+        if (WatchState) {
+            WatchHandler(GlobalController, GlobalSerial);
+        }
+
         TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
     }
 }
@@ -201,13 +205,13 @@ void USART1_IRQHandler(void) {
     if (USART_GetITStatus(USART1, USART_IT_RXNE) == SET) {
 
         Serial_Parse(GlobalSerial);
-        Serial_ReceiveHandler(GlobalSerial, GlobalController);
+        ReceiveHandler(GlobalSerial, GlobalController);
 
         USART_ClearITPendingBit(USART1, USART_IT_RXNE);
     }
 }
 
-void Serial_ReceiveHandler(Serial *serial, Controller *controller) {
+void ReceiveHandler(Serial *serial, Controller *controller) {
     if (serial->RecieveFlag == SET) {
         switch (serial->type) {
         case Byte:
@@ -272,14 +276,26 @@ void Serial_ReceiveHandler(Serial *serial, Controller *controller) {
     }
 }
 
-void Controller_WatchHandler(Controller *controller, Serial *serial) {
-    Serial_SendString(serial, "\r[WATCH][Time %ds] ", RTC_time_s());
-    Serial_SendString(serial, "pitch: %+6.1f ",
+// void Controller_WatchHandler(Controller *controller, Serial *serial) {
+//     Serial_SendString(serial, "\r[WATCH][Time %ds] ", RTC_time_s());
+//     Serial_SendString(serial, "pitch: %+6.1f ",
+//                       *(float *)Controller_Eval(controller, "pitch", DATA));
+//     Serial_SendString(
+//         serial, "speed_left: %+5hd ",
+//         *(int16_t *)Controller_Eval(controller, "speed_left", DATA));
+//     Serial_SendString(
+//         serial, "speed_right: %+5hd ",
+//         *(int16_t *)Controller_Eval(controller, "speed_right", DATA));
+// }
+
+void WatchHandler(Controller *controller, Serial *serial) {
+    Serial_SendString(serial, "\r");
+    Serial_SendString(serial, "pitch %+.1f ",
                       *(float *)Controller_Eval(controller, "pitch", DATA));
     Serial_SendString(
-        serial, "speed_left: %+5hd ",
+        serial, "speed_left %+hd ",
         *(int16_t *)Controller_Eval(controller, "speed_left", DATA));
     Serial_SendString(
-        serial, "speed_right: %+5hd ",
+        serial, "speed_right %+hd ",
         *(int16_t *)Controller_Eval(controller, "speed_right", DATA));
 }
