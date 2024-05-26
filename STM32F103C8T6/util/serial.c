@@ -53,7 +53,7 @@ void Serial_SendStringPack(Serial *serial, char *string) {
 }
 
 void Serial_Parse(Serial *serial) {
-    serial->ByteData = USART_ReceiveData(USART3);
+    serial->ByteData = USART_ReceiveData(serial->usart->USARTx);
 
     switch (serial->type) {
     case None:

@@ -1,12 +1,16 @@
-#include "compare.h"
-#include "gpio.h"
-
+#include "stm32f10x.h"
 #include "stm32f10x_tim.h"
 
+#include <stdlib.h>
+
+#include "compare.h"
+#include "gpio.h"
 #include "pwm.h"
 
 void PWM_Init(PWM *pwm) {
-    // TIM_Init(pwm->tim, NULL);
+    if (pwm->Init_Mode == ENABLE) {
+        TIM_Init(pwm->tim, NULL);
+    }
     Compare_Init(pwm->compare);
     GPIO_Init_(pwm->gpio);
 }

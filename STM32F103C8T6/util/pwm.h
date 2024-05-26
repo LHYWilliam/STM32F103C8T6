@@ -10,6 +10,7 @@ typedef struct {
     TIM *tim;
     Compare *compare;
     GPIO *gpio;
+    uint8_t Init_Mode;
 } PWM;
 
 void PWM_Init(PWM *pwm);

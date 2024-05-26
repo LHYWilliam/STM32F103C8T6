@@ -3,7 +3,11 @@
 #include "tim.h"
 
 void TIM_Init(TIM *tim, ClockSource_Config *config) {
-    RCC_APB1PeriphClockCmd(tim->RCC_APB1Periph, ENABLE);
+    if (tim->TIMx == TIM1) {
+        RCC_APB2PeriphClockCmd(tim->RCC_APBxPeriph, ENABLE);
+    } else {
+        RCC_APB1PeriphClockCmd(tim->RCC_APBxPeriph, ENABLE);
+    }
 
     if (tim->TIM_ClockSource) {
         tim->TIM_ClockSource(tim->TIMx, config);
@@ -17,6 +21,10 @@ void TIM_Init(TIM *tim, ClockSource_Config *config) {
         0,
     };
     TIM_TimeBaseInit(tim->TIMx, &TIM_TimeBaseInitStruct);
+
+    if (tim->TIMx == TIM1) {
+        TIM_CtrlPWMOutputs(tim->TIMx, ENABLE);
+    }
 
     if (tim->CMD_Mode) {
         TIM_Cmd(tim->TIMx, ENABLE);

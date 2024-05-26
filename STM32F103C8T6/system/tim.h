@@ -13,7 +13,7 @@ typedef struct {
 } ClockSource_Config;
 
 typedef struct {
-    uint32_t RCC_APB1Periph;
+    uint32_t RCC_APBxPeriph;
     TIM_TypeDef *TIMx;
     void (*TIM_ClockSource)(TIM_TypeDef *TIMx, ClockSource_Config *config);
     uint16_t TIM_Prescaler;

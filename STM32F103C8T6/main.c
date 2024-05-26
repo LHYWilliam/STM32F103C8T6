@@ -127,24 +127,24 @@ int main() {
     Compare compare_left = {
         TIM1,
         0,
-        TIM_OC1Init,
-        TIM_SetCompare1,
+        TIM_OC4Init,
+        TIM_SetCompare4,
     };
     GPIO gpio_pwm_left = {
         RCC_APB2Periph_GPIOA,
         GPIOA,
-        GPIO_Pin_8,
+        GPIO_Pin_11,
         GPIO_Mode_AF_PP,
     };
     GPIO gpio_direction_left_1 = {
         RCC_APB2Periph_GPIOB,
-        GPIOA,
+        GPIOB,
         GPIO_Pin_12,
         GPIO_Mode_Out_PP,
     };
     GPIO gpio_direction_left_2 = {
         RCC_APB2Periph_GPIOB,
-        GPIOA,
+        GPIOB,
         GPIO_Pin_13,
         GPIO_Mode_Out_PP,
     };
@@ -152,6 +152,7 @@ int main() {
         &tim_pwm,
         &compare_left,
         &gpio_pwm_left,
+        DISABLE,
     };
     Motor motor_left = {
         &pwm_left,
@@ -165,29 +166,30 @@ int main() {
     Compare compare_right = {
         TIM1,
         0,
-        TIM_OC4Init,
-        TIM_SetCompare4,
+        TIM_OC1Init,
+        TIM_SetCompare1,
     };
     GPIO gpio_pwm_right = {
         RCC_APB2Periph_GPIOA,
         GPIOA,
-        GPIO_Pin_11,
+        GPIO_Pin_8,
         GPIO_Mode_AF_PP,
     };
     PWM pwm_right = {
         &tim_pwm,
         &compare_right,
         &gpio_pwm_right,
+        DISABLE,
     };
     GPIO gpio_direction_right_1 = {
         RCC_APB2Periph_GPIOB,
-        GPIOA,
+        GPIOB,
         GPIO_Pin_14,
         GPIO_Mode_Out_PP,
     };
     GPIO gpio_direction_right_2 = {
         RCC_APB2Periph_GPIOB,
-        GPIOA,
+        GPIOB,
         GPIO_Pin_15,
         GPIO_Mode_Out_PP,
     };
@@ -384,18 +386,6 @@ void ReceiveHandler(Serial *serial, Controller *controller) {
         Serial_Clear(serial);
     }
 }
-
-// void Controller_WatchHandler(Controller *controller, Serial *serial) {
-//     Serial_SendString(serial, "\r[WATCH][Time %ds] ", RTC_time_s());
-//     Serial_SendString(serial, "pitch: %+6.1f ",
-//                       *(float *)Controller_Eval(controller, "pitch", DATA));
-//     Serial_SendString(
-//         serial, "speed_left: %+5hd ",
-//         *(int16_t *)Controller_Eval(controller, "speed_left", DATA));
-//     Serial_SendString(
-//         serial, "speed_right: %+5hd ",
-//         *(int16_t *)Controller_Eval(controller, "speed_right", DATA));
-// }
 
 void WatchHandler(Controller *controller, Serial *serial) {
     Serial_SendString(serial, "pitch %+.1f ",

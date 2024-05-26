@@ -11,9 +11,9 @@ void Motor_Init(Motor *motor) {
 void Motor_SetSpeed(Motor *motor, int8_t speed) {
     GPIO_WriteBit(motor->gpio_direction1->GPIOx,
                   motor->gpio_direction1->GPIO_Pin,
-                  speed >= 0 ? Bit_SET : Bit_RESET);
+                  speed >= 0 ? Bit_RESET : Bit_SET);
     GPIO_WriteBit(motor->gpio_direction2->GPIOx,
                   motor->gpio_direction2->GPIO_Pin,
-                  speed >= 0 ? Bit_RESET : Bit_SET);
+                  speed >= 0 ? Bit_SET : Bit_RESET);
     PWM_SetPulse(motor->pwm, speed >= 0 ? speed : -speed);
 }
