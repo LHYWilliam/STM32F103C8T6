@@ -7,18 +7,18 @@
 
 #define SDA_IN()                                                               \
     {                                                                          \
-        GPIOB->CRH &= 0XFFFF0FFF;                                              \
-        GPIOB->CRH |= 8 << 12;                                                 \
+        GPIOB->CRH &= 0XFFFFFF0F;                                              \
+        GPIOB->CRH |= 8 << 4;                                                  \
     }
 #define SDA_OUT()                                                              \
     {                                                                          \
-        GPIOB->CRH &= 0XFFFF0FFF;                                              \
-        GPIOB->CRH |= 3 << 12;                                                 \
+        GPIOB->CRH &= 0XFFFFFF0F;                                              \
+        GPIOB->CRH |= 3 << 4;                                                  \
     }
 
-#define I2C_SCL PBout(10)
-#define I2C_SDA PBout(11)
-#define I2C_READ_SDA PBin(11)
+#define I2C_SCL PBout(8)
+#define I2C_SDA PBout(9)
+#define I2C_READ_SDA PBin(9)
 
 typedef struct {
     GPIO *SCL;
