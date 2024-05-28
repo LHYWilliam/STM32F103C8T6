@@ -191,7 +191,7 @@ int main() {
     info("motor_right started\r\n");
 
     TIM tim2 = {
-        RCC_APB1Periph_TIM2, TIM2, TIM_InternalClock, 7200 - 1, 100 - 1, CMD,
+        RCC_APB1Periph_TIM2, TIM2, TIM_InternalClock, 7200 - 1, 50 - 1, CMD,
     };
     info("starting TIM2\r\n");
     TIM_Init(&tim2, NULL);
