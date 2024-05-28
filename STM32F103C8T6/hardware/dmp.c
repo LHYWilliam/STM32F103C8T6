@@ -6,7 +6,7 @@
 #include "dmp.h"
 #include "serial.h"
 
-#define DMP_SELFTEST
+// #define DMP_SELFTEST
 
 extern Serial *GlobalSerial;
 
@@ -73,8 +73,11 @@ void DMP_Init() {
     info("self_test finished\r\n");
 #endif
 
-    result = mpu_set_dmp_state(1);
-    info("mpu_set_dmp_state %s\r\n", result ? "Failed" : "succeeded");
+    if (result = mpu_set_dmp_state(1), result == 0) {
+        info("mpu_set_dmp_state succeeded\r\n");
+    } else {
+        error("mpu_set_dmp_state failed %d\r\n", result);
+    }
 }
 
 void DMP_GetData(float *pitch, float *roll, float *yaw) {
@@ -84,7 +87,8 @@ void DMP_GetData(float *pitch, float *roll, float *yaw) {
     unsigned long sensor_timestamp;
     float q0 = 0.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;
 
-    dmp_read_fifo(gyro, accel, quat, &sensor_timestamp, &sensors, &more);
+    while (dmp_read_fifo(gyro, accel, quat, &sensor_timestamp, &sensors, &more))
+        ;
     if (sensors & INV_WXYZ_QUAT) {
         q0 = quat[0] / q30;
         q1 = quat[1] / q30;

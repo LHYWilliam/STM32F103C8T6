@@ -1,4 +1,3 @@
-#include "controller.h"
 #include "stm32f10x.h"
 #include "stm32f10x_gpio.h"
 #include "stm32f10x_rcc.h"
@@ -27,12 +26,17 @@
 
 I2C *GlobalI2C;
 Serial *GlobalSerial;
-Controller *GlobalController;
+
+Motor *left, *right;
 
 uint8_t WatchState = DISABLE;
 
-void ReceiveHandler(Serial *serial, Controller *controller);
-void WatchHandler(Controller *controller, Serial *serial);
+void ReceiveHandler(Serial *serial);
+void WatchHandler(Serial *serial);
+
+int16_t speed_left, speed_right;
+float pitch = 0, roll = 0, yaw = 0;
+int8_t pulse_left = 0, pulse_right = 0;
 
 int main() {
     RTC_Init();
@@ -71,24 +75,6 @@ int main() {
     info("starting USART interrupt\r\n");
     USART_Interrupt_Init(&interrupt);
     info("USART interrupt started\r\n");
-
-    int16_t speed_left, speed_right;
-    float pitch = 0, roll = 0, yaw = 0;
-    int8_t pulse_left = 0, pulse_right = 0;
-
-    Controller controller;
-    GlobalController = &controller;
-    info("starting Controller\r\n");
-    Controller_Init(&controller);
-    info("Controller started\r\n");
-
-    Controller_Add(&controller, "pitch", &pitch, DATA);
-    Controller_Add(&controller, "roll", &roll, DATA);
-    Controller_Add(&controller, "yaw", &yaw, DATA);
-    Controller_Add(&controller, "speed_left", &speed_left, DATA);
-    Controller_Add(&controller, "speed_right", &speed_right, DATA);
-    Controller_Add(&controller, "pulse_left", &pulse_left, DATA);
-    Controller_Add(&controller, "pulse_right", &pulse_right, DATA);
 
     GPIO SCL = {
         RCC_APB2Periph_GPIOB,
@@ -159,6 +145,7 @@ int main() {
         &gpio_direction_left_1,
         &gpio_direction_left_2,
     };
+    left = &motor_left;
     info("motor_left DMP\r\n");
     Motor_Init(&motor_left);
     info("motor_left started\r\n");
@@ -198,6 +185,7 @@ int main() {
         &gpio_direction_right_1,
         &gpio_direction_right_2,
     };
+    right = &motor_right;
     info("motor_right DMP\r\n");
     Motor_Init(&motor_right);
     info("motor_right started\r\n");
@@ -271,29 +259,26 @@ int main() {
     info("started successfully\r\n");
 
     for (;;) {
-        Motor_SetSpeed(&motor_left, pulse_left);
-        Motor_SetSpeed(&motor_right, pulse_right);
     }
 }
 
 void TIM2_IRQHandler(void) {
     if (TIM_GetITStatus(TIM2, TIM_IT_Update) == SET) {
 
-        *(int16_t *)Controller_Eval(GlobalController, "speed_left", DATA) =
-            (int16_t)TIM_GetCounter(TIM3);
+        DMP_GetData(&pitch, &roll, &yaw);
+
+        speed_left = (int16_t)TIM_GetCounter(TIM3);
         TIM_SetCounter(TIM3, 0);
 
-        *(int16_t *)Controller_Eval(GlobalController, "speed_right", DATA) =
-            (int16_t)TIM_GetCounter(TIM4);
+        speed_right = (int16_t)TIM_GetCounter(TIM4);
         TIM_SetCounter(TIM4, 0);
 
-        DMP_GetData((float *)Controller_Eval(GlobalController, "pitch", DATA),
-                    (float *)Controller_Eval(GlobalController, "roll", DATA),
-                    (float *)Controller_Eval(GlobalController, "yaw", DATA));
-
         if (WatchState) {
-            WatchHandler(GlobalController, GlobalSerial);
+            WatchHandler(GlobalSerial);
         }
+
+        Motor_SetSpeed(left, pulse_left);
+        Motor_SetSpeed(right, pulse_right);
 
         TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
     }
@@ -303,13 +288,13 @@ void USART3_IRQHandler(void) {
     if (USART_GetITStatus(USART3, USART_IT_RXNE) == SET) {
 
         Serial_Parse(GlobalSerial);
-        ReceiveHandler(GlobalSerial, GlobalController);
+        ReceiveHandler(GlobalSerial);
 
         USART_ClearITPendingBit(USART3, USART_IT_RXNE);
     }
 }
 
-void ReceiveHandler(Serial *serial, Controller *controller) {
+void ReceiveHandler(Serial *serial) {
     if (serial->RecieveFlag == SET) {
         switch (serial->type) {
         case Byte:
@@ -333,20 +318,12 @@ void ReceiveHandler(Serial *serial, Controller *controller) {
 
                 if (strcmp(Body, "pulse_left") == 0) {
                     char *input = strtok(NULL, " ");
-                    sscanf(input, "%hhd",
-                           (int8_t *)Controller_Eval(controller, "pulse_left",
-                                                     DATA));
-                    info("successfully set %s to %hhd\r\n", Body,
-                         *(int8_t *)Controller_Eval(controller, "pulse_left",
-                                                    DATA));
+                    sscanf(input, "%hhd", &pulse_left);
+                    info("successfully set %s to %hhd\r\n", Body, pulse_left);
                 } else if (strcmp(Body, "pulse_right") == 0) {
                     char *input = strtok(NULL, " ");
-                    sscanf(input, "%hhd",
-                           (int8_t *)Controller_Eval(controller, "pulse_right",
-                                                     DATA));
-                    info("successfully set %s to %hhd\r\n", Body,
-                         *(int8_t *)Controller_Eval(controller, "pulse_right",
-                                                    DATA));
+                    sscanf(input, "%hhd", &pulse_right);
+                    info("successfully set %s to %hhd\r\n", Body, pulse_right);
                 } else {
                     error("unknow command\r\n");
                 }
@@ -357,13 +334,9 @@ void ReceiveHandler(Serial *serial, Controller *controller) {
                 char *Body = strtok(NULL, " ");
 
                 if (strcmp(Body, "pulse_left") == 0) {
-                    info("%s: %d\r\n", Body,
-                         *(int8_t *)Controller_Eval(controller, "pulse_left",
-                                                    DATA));
+                    info("%s: %d\r\n", Body, &pulse_left);
                 } else if (strcmp(Body, "pulse_right") == 0) {
-                    info("%s: %d\r\n", Body,
-                         *(int8_t *)Controller_Eval(controller, "pulse_right",
-                                                    DATA));
+                    info("%s: %d\r\n", Body, pulse_right);
                 } else {
                     error("unknow command\r\n");
                 }
@@ -387,15 +360,10 @@ void ReceiveHandler(Serial *serial, Controller *controller) {
     }
 }
 
-void WatchHandler(Controller *controller, Serial *serial) {
-    Serial_SendString(serial, "pitch %+.1f ",
-                      *(float *)Controller_Eval(controller, "pitch", DATA));
-    Serial_SendString(
-        serial, "speed_left %+hd ",
-        *(int16_t *)Controller_Eval(controller, "speed_left", DATA));
-    Serial_SendString(
-        serial, "speed_right %+hd ",
-        *(int16_t *)Controller_Eval(controller, "speed_right", DATA));
-
+void WatchHandler(Serial *serial) {
+    // Serial_SendString(serial, "\r");
+    Serial_SendString(serial, "pitch %+8.1f ", pitch);
+    Serial_SendString(serial, "speed_left %+8hd ", speed_left);
+    Serial_SendString(serial, "speed_right %+8hd ", speed_right);
     Serial_SendString(serial, "\r\n");
 }
