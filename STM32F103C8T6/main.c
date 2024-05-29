@@ -16,20 +16,27 @@
 #include "interrupt.h"
 #include "motor.h"
 #include "mpu.h"
+#include "pid.h"
 #include "pwm.h"
 #include "rtc.h"
 #include "serial.h"
 #include "tim.h"
 #include "usart.h"
 
+#define ZERO 0.f
+#define STAND_KP -300.0f
+#define STAND_KD 0.1f
 #define OFFESTADAPT_TIMES ((uint8_t)64)
 #define MPU6050_DEVICE_ADDRESS ((uint8_t)0x68)
 
 I2C *GlobalI2C;
 MPU *GlobalMPU;
+PID *GlobalStand;
 Serial *GlobalSerial;
 
 uint8_t WatchState = DISABLE;
+
+int16_t PID_StandCaculate(PID *pid, float pitch, int16_t ygyro);
 
 void ReceiveHandler(Serial *serial);
 void WatchHandler(Serial *serial);
@@ -117,7 +124,7 @@ int main() {
     info("DMP started\r\n");
 
     TIM tim_pwm = {
-        RCC_APB2Periph_TIM1, TIM1, TIM_InternalClock, 720 - 1, 100 - 1, CMD,
+        RCC_APB2Periph_TIM1, TIM1, TIM_InternalClock, 100 - 1, 7200 - 1, CMD,
     };
     TIM_Init(&tim_pwm, NULL);
     Compare compare_left = {
@@ -200,20 +207,6 @@ int main() {
     Motor_Init(&motor_right);
     info("motor_right started\r\n");
 
-    TIM tim2 = {
-        RCC_APB1Periph_TIM2, TIM2, TIM_InternalClock, 7200 - 1, 50 - 1, CMD,
-    };
-    info("starting TIM2\r\n");
-    TIM_Init(&tim2, NULL);
-    info("TIM2 started\r\n");
-
-    TIM_Interrupt TIM_interrupt = {
-        TIM2, TIM2_IRQn, NVIC_PriorityGroup_2, 0, 2,
-    };
-    info("starting TIM_Interrupt\r\n");
-    TIM_Interrupt_Init(&TIM_interrupt);
-    info("TIM_Interrupt started\r\n");
-
     GPIO gpio_encoder_left = {
         RCC_APB2Periph_GPIOA,
         GPIOA,
@@ -266,6 +259,25 @@ int main() {
     Encoder_Init(&encoder_right);
     info("encoder_right started\r\n");
 
+    PID stand = {
+        ENABLE, DISABLE, ENABLE, STAND_KP, 0, STAND_KD, ZERO,
+    };
+    GlobalStand = &stand;
+
+    TIM tim2 = {
+        RCC_APB1Periph_TIM2, TIM2, TIM_InternalClock, 7200 - 1, 50 - 1, CMD,
+    };
+    info("starting TIM2\r\n");
+    TIM_Init(&tim2, NULL);
+    info("TIM2 started\r\n");
+
+    TIM_Interrupt TIM_interrupt = {
+        TIM2, TIM2_IRQn, NVIC_PriorityGroup_2, 0, 2,
+    };
+    info("starting TIM_Interrupt\r\n");
+    TIM_Interrupt_Init(&TIM_interrupt);
+    info("TIM_Interrupt started\r\n");
+
     info("started successfully\r\n");
 
     for (;;) {
@@ -288,6 +300,11 @@ void TIM2_IRQHandler(void) {
             WatchHandler(GlobalSerial);
         }
 
+        int16_t stand = PID_StandCaculate(GlobalStand, pitch, ygyro);
+
+        pulse_left = stand;
+        pulse_right = stand;
+
         Motor_SetSpeed(left, pulse_left);
         Motor_SetSpeed(right, pulse_right);
 
@@ -303,6 +320,11 @@ void USART3_IRQHandler(void) {
 
         USART_ClearITPendingBit(USART3, USART_IT_RXNE);
     }
+}
+
+int16_t PID_StandCaculate(PID *pid, float pitch, int16_t ygyro) {
+    float error = pid->goal - pitch;
+    return pid->Kp * error + pid->Kd * ygyro;
 }
 
 void ReceiveHandler(Serial *serial) {
@@ -327,14 +349,21 @@ void ReceiveHandler(Serial *serial) {
             if (strcmp(Head, "set") == 0) {
                 char *Body = strtok(NULL, " ");
 
-                if (strcmp(Body, "pulse_left") == 0) {
+                if (strcmp(Body, "zero") == 0) {
                     char *input = strtok(NULL, " ");
-                    sscanf(input, "%hd", &pulse_left);
-                    info("successfully set %s to %hd\r\n", Body, pulse_left);
-                } else if (strcmp(Body, "pulse_right") == 0) {
+                    sscanf(input, "%f", &GlobalStand->goal);
+                    info("successfully set %s to %f\r\n", Body,
+                         GlobalStand->goal);
+                } else if (strcmp(Body, "kp") == 0) {
                     char *input = strtok(NULL, " ");
-                    sscanf(input, "%hd", &pulse_right);
-                    info("successfully set %s to %hd\r\n", Body, pulse_right);
+                    sscanf(input, "%f", &GlobalStand->Kp);
+                    info("successfully set %s to %f\r\n", Body,
+                         GlobalStand->Kp);
+                } else if (strcmp(Body, "kd") == 0) {
+                    char *input = strtok(NULL, " ");
+                    sscanf(input, "%f", &GlobalStand->Kd);
+                    info("successfully set %s to %f\r\n", Body,
+                         GlobalStand->Kd);
                 } else {
                     error("unknow command\r\n");
                 }
@@ -344,10 +373,12 @@ void ReceiveHandler(Serial *serial) {
             } else if (strcmp(Head, "show") == 0) {
                 char *Body = strtok(NULL, " ");
 
-                if (strcmp(Body, "pulse_left") == 0) {
-                    info("%s: %hd\r\n", Body, pulse_left);
-                } else if (strcmp(Body, "pulse_right") == 0) {
-                    info("%s: %hd\r\n", Body, pulse_right);
+                if (strcmp(Body, "zero") == 0) {
+                    info("%s: %f\r\n", Body, GlobalStand->goal);
+                } else if (strcmp(Body, "kp") == 0) {
+                    info("%s: %f\r\n", Body, GlobalStand->Kp);
+                } else if (strcmp(Body, "kd") == 0) {
+                    info("%s: %f\r\n", Body, GlobalStand->Kd);
                 } else {
                     error("unknow command\r\n");
                 }
