@@ -8,7 +8,7 @@ void Motor_Init(Motor *motor) {
     GPIO_Init_(motor->gpio_direction1);
     GPIO_Init_(motor->gpio_direction2);
 }
-void Motor_SetSpeed(Motor *motor, int8_t speed) {
+void Motor_SetSpeed(Motor *motor, int16_t speed) {
     GPIO_WriteBit(motor->gpio_direction1->GPIOx,
                   motor->gpio_direction1->GPIO_Pin,
                   speed >= 0 ? Bit_RESET : Bit_SET);

@@ -22,21 +22,26 @@
 #include "tim.h"
 #include "usart.h"
 
+#define OFFESTADAPT_TIMES ((uint8_t)64)
 #define MPU6050_DEVICE_ADDRESS ((uint8_t)0x68)
 
 I2C *GlobalI2C;
+MPU *GlobalMPU;
 Serial *GlobalSerial;
-
-Motor *left, *right;
 
 uint8_t WatchState = DISABLE;
 
 void ReceiveHandler(Serial *serial);
 void WatchHandler(Serial *serial);
 
-int16_t speed_left, speed_right;
-float pitch = 0, roll = 0, yaw = 0;
-int8_t pulse_left = 0, pulse_right = 0;
+Motor *left, *right;
+
+float pitch, roll, yaw;
+int16_t xacc, yacc, zacc, xgyro, ygyro, zgyro;
+int16_t xacc_offset, yacc_offset, xgyro_offset, ygyro_offset, zgyro_offset;
+
+int16_t speed_left = 0, speed_right = 0;
+int16_t pulse_left = 0, pulse_right = 0;
 
 int main() {
     RTC_Init();
@@ -98,9 +103,14 @@ int main() {
         &i2c,
         MPU6050_DEVICE_ADDRESS,
     };
+    GlobalMPU = &mpu;
     info("starting MPU\r\n");
     MPU_Init(&mpu);
     info("MPU started\r\n");
+    info("MPU adapting offset\r\n");
+    MPU_AdaptOffset(&mpu, OFFESTADAPT_TIMES, &xacc_offset, &yacc_offset,
+                    &xgyro_offset, &ygyro_offset, &zgyro_offset);
+    info("MPU adapting offset succeeded\r\n");
 
     info("starting DMP\r\n");
     DMP_Init();
@@ -266,6 +276,7 @@ void TIM2_IRQHandler(void) {
     if (TIM_GetITStatus(TIM2, TIM_IT_Update) == SET) {
 
         DMP_GetData(&pitch, &roll, &yaw);
+        MPU_GetData(GlobalMPU, &xacc, &yacc, &zacc, &xgyro, &ygyro, &zgyro);
 
         speed_left = (int16_t)TIM_GetCounter(TIM3);
         TIM_SetCounter(TIM3, 0);
@@ -318,12 +329,12 @@ void ReceiveHandler(Serial *serial) {
 
                 if (strcmp(Body, "pulse_left") == 0) {
                     char *input = strtok(NULL, " ");
-                    sscanf(input, "%hhd", &pulse_left);
-                    info("successfully set %s to %hhd\r\n", Body, pulse_left);
+                    sscanf(input, "%hd", &pulse_left);
+                    info("successfully set %s to %hd\r\n", Body, pulse_left);
                 } else if (strcmp(Body, "pulse_right") == 0) {
                     char *input = strtok(NULL, " ");
-                    sscanf(input, "%hhd", &pulse_right);
-                    info("successfully set %s to %hhd\r\n", Body, pulse_right);
+                    sscanf(input, "%hd", &pulse_right);
+                    info("successfully set %s to %hd\r\n", Body, pulse_right);
                 } else {
                     error("unknow command\r\n");
                 }
@@ -334,9 +345,9 @@ void ReceiveHandler(Serial *serial) {
                 char *Body = strtok(NULL, " ");
 
                 if (strcmp(Body, "pulse_left") == 0) {
-                    info("%s: %d\r\n", Body, &pulse_left);
+                    info("%s: %hd\r\n", Body, pulse_left);
                 } else if (strcmp(Body, "pulse_right") == 0) {
-                    info("%s: %d\r\n", Body, pulse_right);
+                    info("%s: %hd\r\n", Body, pulse_right);
                 } else {
                     error("unknow command\r\n");
                 }
@@ -361,9 +372,10 @@ void ReceiveHandler(Serial *serial) {
 }
 
 void WatchHandler(Serial *serial) {
-    // Serial_SendString(serial, "\r");
-    Serial_SendString(serial, "pitch %+8.1f ", pitch);
-    Serial_SendString(serial, "speed_left %+8hd ", speed_left);
-    Serial_SendString(serial, "speed_right %+8hd ", speed_right);
-    Serial_SendString(serial, "\r\n");
+    Serial_SendString(serial, "\r");
+    Serial_SendString(serial, "pitch %+5.1f| ", pitch);
+    Serial_SendString(serial, "ygyro %+5d| ", ygyro - ygyro_offset);
+    Serial_SendString(serial, "speed_left %+4hd| ", speed_left);
+    Serial_SendString(serial, "speed_right %+4hd| ", speed_right);
+    // Serial_SendString(serial, "\r\n");
 }

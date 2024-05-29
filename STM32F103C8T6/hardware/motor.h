@@ -13,6 +13,6 @@ typedef struct {
 
 void Motor_Init(Motor *motor);
 
-void Motor_SetSpeed(Motor *motor, int8_t speed);
+void Motor_SetSpeed(Motor *motor, int16_t speed);
 
 #endif

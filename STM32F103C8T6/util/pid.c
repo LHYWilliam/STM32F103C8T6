@@ -1,8 +1,6 @@
-#include "pid.h"
 #include <stdint.h>
 
-#define DISABLE ((uint8_t)0)
-#define ENABLE ((uint8_t)1)
+#include "pid.h"
 
 void PID_Init(PID *pid) {
     pid->last = 0.;

@@ -4,15 +4,15 @@
 #include <stdint.h>
 
 typedef struct {
+    uint8_t KpState;
+    uint8_t KiState;
+    uint8_t KdState;
+
     float Kp;
     float Ki;
     float Kd;
 
     float goal;
-
-    uint8_t KpState;
-    uint8_t KiState;
-    uint8_t KdState;
 
     float last;
     float sum;
