@@ -23,32 +23,39 @@
 #include "tim.h"
 #include "usart.h"
 
-#define ZERO 0.f
-#define STAND_KP -300.0f
-#define STAND_KD 0.1f
-#define OFFESTADAPT_TIMES ((uint8_t)64)
-#define MPU6050_DEVICE_ADDRESS ((uint8_t)0x68)
+#define ZERO -2.f
 
-I2C *GlobalI2C;
-MPU *GlobalMPU;
+#define STAND_KP -600.f
+#define STAND_KD -2.f
+
+#define SPEED_KP +400.f
+#define SPEED_KI SPEED_KP / 200
+
 PID *GlobalStand;
-Serial *GlobalSerial;
+PID *GlobalSpeed;
 
-uint8_t WatchState = DISABLE;
+int16_t PID_Stand(PID *pid, float pitch, int16_t ygyro);
+int16_t PID_Speed(PID *pid, int16_t left, int16_t right);
 
-int16_t PID_StandCaculate(PID *pid, float pitch, int16_t ygyro);
-
-void ReceiveHandler(Serial *serial);
-void WatchHandler(Serial *serial);
-
-Motor *left, *right;
+#define MPU6050_DEVICE_ADDRESS ((uint8_t)0x68)
+#define OFFESTADAPT_TIMES ((uint8_t)64)
 
 float pitch, roll, yaw;
 int16_t xacc, yacc, zacc, xgyro, ygyro, zgyro;
 int16_t xacc_offset, yacc_offset, xgyro_offset, ygyro_offset, zgyro_offset;
 
+Motor *left, *right;
 int16_t speed_left = 0, speed_right = 0;
 int16_t pulse_left = 0, pulse_right = 0;
+
+I2C *GlobalI2C;
+MPU *GlobalMPU;
+Serial *GlobalSerial;
+
+uint8_t WatchState = DISABLE;
+
+void ReceiveHandler(Serial *serial);
+void WatchHandler(Serial *serial);
 
 int main() {
     RTC_Init();
@@ -79,14 +86,14 @@ int main() {
     Serial_Init(&serial);
     Serial_SendString(
         &serial, "\r\n------------------------------------------------\r\n");
-    info("Serial started\r\n");
+    INFO("Serial started\r\n");
 
     USART_Interrupt interrupt = {
         USART3, USART_IT_RXNE, USART3_IRQn, NVIC_PriorityGroup_2, 2, 0,
     };
-    info("starting USART interrupt\r\n");
+    INFO("starting USART interrupt\r\n");
     USART_Interrupt_Init(&interrupt);
-    info("USART interrupt started\r\n");
+    INFO("USART interrupt started\r\n");
 
     GPIO SCL = {
         RCC_APB2Periph_GPIOB,
@@ -111,17 +118,17 @@ int main() {
         MPU6050_DEVICE_ADDRESS,
     };
     GlobalMPU = &mpu;
-    info("starting MPU\r\n");
+    INFO("starting MPU\r\n");
     MPU_Init(&mpu);
-    info("MPU started\r\n");
-    info("MPU adapting offset\r\n");
+    INFO("MPU started\r\n");
+    INFO("MPU adapting offset\r\n");
     MPU_AdaptOffset(&mpu, OFFESTADAPT_TIMES, &xacc_offset, &yacc_offset,
                     &xgyro_offset, &ygyro_offset, &zgyro_offset);
-    info("MPU adapting offset succeeded\r\n");
+    INFO("MPU adapting offset succeeded\r\n");
 
-    info("starting DMP\r\n");
+    INFO("starting DMP\r\n");
     DMP_Init();
-    info("DMP started\r\n");
+    INFO("DMP started\r\n");
 
     TIM tim_pwm = {
         RCC_APB2Periph_TIM1, TIM1, TIM_InternalClock, 100 - 1, 7200 - 1, CMD,
@@ -163,9 +170,9 @@ int main() {
         &gpio_direction_left_2,
     };
     left = &motor_left;
-    info("motor_left DMP\r\n");
+    INFO("motor_left DMP\r\n");
     Motor_Init(&motor_left);
-    info("motor_left started\r\n");
+    INFO("motor_left started\r\n");
 
     Compare compare_right = {
         TIM1,
@@ -203,9 +210,9 @@ int main() {
         &gpio_direction_right_2,
     };
     right = &motor_right;
-    info("motor_right DMP\r\n");
+    INFO("motor_right DMP\r\n");
     Motor_Init(&motor_right);
-    info("motor_right started\r\n");
+    INFO("motor_right started\r\n");
 
     GPIO gpio_encoder_left = {
         RCC_APB2Periph_GPIOA,
@@ -229,9 +236,9 @@ int main() {
         &capture_left1,        &capture_left2,
         TIM_ICPolarity_Rising, TIM_ICPolarity_Falling,
     };
-    info("starting encoder_left\r\n");
+    INFO("starting encoder_left\r\n");
     Encoder_Init(&encoder_left);
-    info("encoder_left started\r\n");
+    INFO("encoder_left started\r\n");
 
     GPIO gpio_encoder_right = {
         RCC_APB2Periph_GPIOB,
@@ -255,30 +262,36 @@ int main() {
         &capture_right1,       &capture_right2,
         TIM_ICPolarity_Rising, TIM_ICPolarity_Rising,
     };
-    info("starting encoder_right\r\n");
+    INFO("starting encoder_right\r\n");
     Encoder_Init(&encoder_right);
-    info("encoder_right started\r\n");
+    INFO("encoder_right started\r\n");
 
     PID stand = {
         ENABLE, DISABLE, ENABLE, STAND_KP, 0, STAND_KD, ZERO,
     };
     GlobalStand = &stand;
+    PID_Init(&stand);
+    PID speed = {
+        ENABLE, ENABLE, DISABLE, SPEED_KP, SPEED_KI, 0, 0,
+    };
+    GlobalSpeed = &speed;
+    PID_Init(&speed);
 
     TIM tim2 = {
         RCC_APB1Periph_TIM2, TIM2, TIM_InternalClock, 7200 - 1, 50 - 1, CMD,
     };
-    info("starting TIM2\r\n");
+    INFO("starting TIM2\r\n");
     TIM_Init(&tim2, NULL);
-    info("TIM2 started\r\n");
+    INFO("TIM2 started\r\n");
 
     TIM_Interrupt TIM_interrupt = {
         TIM2, TIM2_IRQn, NVIC_PriorityGroup_2, 0, 2,
     };
-    info("starting TIM_Interrupt\r\n");
+    INFO("starting TIM_Interrupt\r\n");
     TIM_Interrupt_Init(&TIM_interrupt);
-    info("TIM_Interrupt started\r\n");
+    INFO("TIM_Interrupt started\r\n");
 
-    info("started successfully\r\n");
+    INFO("started successfully\r\n");
 
     for (;;) {
     }
@@ -300,10 +313,13 @@ void TIM2_IRQHandler(void) {
             WatchHandler(GlobalSerial);
         }
 
-        int16_t stand = PID_StandCaculate(GlobalStand, pitch, ygyro);
+        int16_t stand = PID_Stand(GlobalStand, pitch, ygyro);
+        int16_t speed = PID_Speed(GlobalSpeed, speed_left, speed_right);
 
-        pulse_left = stand;
-        pulse_right = stand;
+        pulse_left = stand + speed;
+        pulse_right = stand + speed;
+        LIMIT(pulse_left, -7200, 7200);
+        LIMIT(pulse_right, -7200, 7200);
 
         Motor_SetSpeed(left, pulse_left);
         Motor_SetSpeed(right, pulse_right);
@@ -322,9 +338,22 @@ void USART3_IRQHandler(void) {
     }
 }
 
-int16_t PID_StandCaculate(PID *pid, float pitch, int16_t ygyro) {
+int16_t PID_Stand(PID *pid, float pitch, int16_t ygyro) {
     float error = pid->goal - pitch;
+
     return pid->Kp * error + pid->Kd * ygyro;
+}
+
+int16_t PID_Speed(PID *pid, int16_t left, int16_t right) {
+    int16_t error = left + right - pid->goal;
+    error = pid->last * 0.8 + error * 0.2;
+
+    pid->sum += error;
+    pid->last = error;
+
+    LIMIT(pid->sum, -7200, 7200);
+
+    return pid->Kp * error + pid->Ki * pid->sum;
 }
 
 void ReceiveHandler(Serial *serial) {
@@ -332,7 +361,7 @@ void ReceiveHandler(Serial *serial) {
         switch (serial->type) {
         case Byte:
             Serial_SendString(serial, "\r");
-            info("received Byte [%d]\r\n", serial->ByteData);
+            INFO("received Byte [%d]\r\n", serial->ByteData);
 
             if (serial->ByteData == 0x0D) {
                 WatchState = DISABLE;
@@ -343,7 +372,7 @@ void ReceiveHandler(Serial *serial) {
             break;
 
         case StringPack:
-            info("receive command [>%s]\r\n", serial->StringData);
+            INFO("receive command [>%s]\r\n", serial->StringData);
 
             char *Head = strtok(serial->StringData, " ");
             if (strcmp(Head, "set") == 0) {
@@ -352,20 +381,26 @@ void ReceiveHandler(Serial *serial) {
                 if (strcmp(Body, "zero") == 0) {
                     char *input = strtok(NULL, " ");
                     sscanf(input, "%f", &GlobalStand->goal);
-                    info("successfully set %s to %f\r\n", Body,
+                    INFO("successfully set %s to %f\r\n", Body,
                          GlobalStand->goal);
-                } else if (strcmp(Body, "kp") == 0) {
+                } else if (strcmp(Body, "standkp") == 0) {
                     char *input = strtok(NULL, " ");
                     sscanf(input, "%f", &GlobalStand->Kp);
-                    info("successfully set %s to %f\r\n", Body,
+                    INFO("successfully set %s to %f\r\n", Body,
                          GlobalStand->Kp);
-                } else if (strcmp(Body, "kd") == 0) {
+                } else if (strcmp(Body, "standkd") == 0) {
                     char *input = strtok(NULL, " ");
                     sscanf(input, "%f", &GlobalStand->Kd);
-                    info("successfully set %s to %f\r\n", Body,
+                    INFO("successfully set %s to %f\r\n", Body,
                          GlobalStand->Kd);
+                } else if (strcmp(Body, "speedkp") == 0) {
+                    char *input = strtok(NULL, " ");
+                    sscanf(input, "%f", &GlobalSpeed->Kp);
+                    GlobalSpeed->Ki = GlobalSpeed->Kp / 200;
+                    INFO("successfully set %s to %f\r\n", Body,
+                         GlobalSpeed->Kp);
                 } else {
-                    error("unknow command\r\n");
+                    ERROR("unknow command\r\n");
                 }
 
             } else if (strcmp(Head, "call") == 0) {
@@ -374,23 +409,25 @@ void ReceiveHandler(Serial *serial) {
                 char *Body = strtok(NULL, " ");
 
                 if (strcmp(Body, "zero") == 0) {
-                    info("%s: %f\r\n", Body, GlobalStand->goal);
-                } else if (strcmp(Body, "kp") == 0) {
-                    info("%s: %f\r\n", Body, GlobalStand->Kp);
-                } else if (strcmp(Body, "kd") == 0) {
-                    info("%s: %f\r\n", Body, GlobalStand->Kd);
+                    INFO("%s: %f\r\n", Body, GlobalStand->goal);
+                } else if (strcmp(Body, "standkp") == 0) {
+                    INFO("%s: %f\r\n", Body, GlobalStand->Kp);
+                } else if (strcmp(Body, "standkd") == 0) {
+                    INFO("%s: %f\r\n", Body, GlobalStand->Kd);
+                } else if (strcmp(Body, "speedkp") == 0) {
+                    INFO("%s: %f\r\n", Body, GlobalSpeed->Kp);
                 } else {
-                    error("unknow command\r\n");
+                    ERROR("unknow command\r\n");
                 }
 
             } else if (strcmp(Head, "watch") == 0) {
                 WatchState = ENABLE;
 
             } else if (strcmp(Head, "reset") == 0) {
-                info("call reset succeeeded\r\n");
+                INFO("call reset succeeeded\r\n");
                 NVIC_SystemReset();
             } else {
-                error("unknow command\r\n");
+                ERROR("unknow command\r\n");
             }
             break;
 

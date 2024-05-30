@@ -16,67 +16,67 @@ void DMP_Init() {
     int8_t result;
 
     if (result = mpu_init(NULL), result == 0) {
-        info("mpu_init succeeded\r\n");
+        INFO("mpu_init succeeded\r\n");
     } else {
-        error("mpu_init failed %d\r\n", result);
+        ERROR("mpu_init failed %d\r\n", result);
     }
 
     if (result = mpu_set_sensors(INV_XYZ_GYRO | INV_XYZ_ACCEL), result == 0) {
-        info("mpu_set_sensors succeeded\r\n");
+        INFO("mpu_set_sensors succeeded\r\n");
     } else {
-        error("mpu_set_sensors failed %d\r\n", result);
+        ERROR("mpu_set_sensors failed %d\r\n", result);
     }
     if (result = mpu_configure_fifo(INV_XYZ_GYRO | INV_XYZ_ACCEL),
         result == 0) {
-        info("mpu_configure_fifo succeeded\r\n");
+        INFO("mpu_configure_fifo succeeded\r\n");
     } else {
-        error("mpu_configure_fifo failed %d\r\n", result);
+        ERROR("mpu_configure_fifo failed %d\r\n", result);
     }
     if (result = mpu_set_sample_rate(DEFAULT_MPU_HZ), result == 0) {
-        info("mpu_set_sample_rate succeeded\r\n");
+        INFO("mpu_set_sample_rate succeeded\r\n");
     } else {
-        error("mpu_set_sample_rate failed %d\r\n", result);
+        ERROR("mpu_set_sample_rate failed %d\r\n", result);
     }
 
     if (result = dmp_load_motion_driver_firmware(), result == 0) {
-        info("dmp_load_motion_driver_firmware succeeded\r\n");
+        INFO("dmp_load_motion_driver_firmware succeeded\r\n");
     } else {
-        error("dmp_load_motion_driver_firmware failed %d\r\n", result);
+        ERROR("dmp_load_motion_driver_firmware failed %d\r\n", result);
     }
 
     if (result = dmp_set_orientation(
             inv_orientation_matrix_to_scalar(gyro_orientation)),
         result == 0) {
-        info("dmp_set_orientation succeeded\r\n");
+        INFO("dmp_set_orientation succeeded\r\n");
     } else {
-        error("dmp_set_orientation failed %d\r\n", result);
+        ERROR("dmp_set_orientation failed %d\r\n", result);
     }
     if (result = dmp_enable_feature(
             DMP_FEATURE_6X_LP_QUAT | DMP_FEATURE_TAP |
             DMP_FEATURE_ANDROID_ORIENT | DMP_FEATURE_SEND_RAW_ACCEL |
             DMP_FEATURE_SEND_CAL_GYRO | DMP_FEATURE_GYRO_CAL),
         result == 0) {
-        info("dmp_enable_feature succeeded\r\n");
+        INFO("dmp_enable_feature succeeded\r\n");
     } else {
-        error("dmp_enable_feature failed %d\r\n", result);
+        ERROR("dmp_enable_feature failed %d\r\n", result);
     }
 
     if (result = dmp_set_fifo_rate(DEFAULT_MPU_HZ), result == 0) {
-        info("dmp_set_fifo_rate succeeded\r\n");
+        INFO("dmp_set_fifo_rate succeeded\r\n");
     } else {
-        error("dmp_set_fifo_rate failed %d\r\n", result);
+        ERROR("dmp_set_fifo_rate failed %d\r\n", result);
     }
 
 #ifdef DMP_SELFTEST
-    info("runing self_test\r\n");
+    INFO("runing self_test\r\n");
     run_self_test();
-    info("self_test finished\r\n");
+    INFO("self_test finished\r\n");
 #endif
 
     if (result = mpu_set_dmp_state(1), result == 0) {
-        info("mpu_set_dmp_state succeeded\r\n");
+        INFO("mpu_set_dmp_state succeeded\r\n");
     } else {
-        error("mpu_set_dmp_state failed %d\r\n", result);
+        ERROR("mpu_set_dmp_state failed %d\r\n", result);
     }
 }
 

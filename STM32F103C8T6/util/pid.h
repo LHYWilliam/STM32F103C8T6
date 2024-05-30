@@ -3,6 +3,12 @@
 
 #include <stdint.h>
 
+#define LIMIT(data, low, high)                                                 \
+    do {                                                                       \
+        data = data < low ? low : data;                                        \
+        data = data > high ? high : data;                                      \
+    } while (0)
+
 typedef struct {
     uint8_t KpState;
     uint8_t KiState;
