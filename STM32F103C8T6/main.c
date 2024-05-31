@@ -23,19 +23,30 @@
 #include "tim.h"
 #include "usart.h"
 
-#define ZERO -2.f
+#define ZERO 0.5f
 
-#define STAND_KP -600.f
-#define STAND_KD -2.f
+#define STAND_KP -300.f
+#define STAND_KD -1.5f
+// #define STAND_KP -300.f
+// #define STAND_KD -1.5f
 
-#define SPEED_KP +400.f
+#define SPEED_KP +300.f
 #define SPEED_KI SPEED_KP / 200
+// #define SPEED_KP +300.f
+// #define SPEED_KI SPEED_KP / 200
+
+#define TURN_KP +20.f
+#define TURN_KD +1.f
+
+int16_t stand, speed, turn;
 
 PID *GlobalStand;
 PID *GlobalSpeed;
+PID *GlobalTurn;
 
 int16_t PID_Stand(PID *pid, float pitch, int16_t ygyro);
 int16_t PID_Speed(PID *pid, int16_t left, int16_t right);
+int16_t PID_Turn(PID *pid, int16_t zgyro);
 
 #define MPU6050_DEVICE_ADDRESS ((uint8_t)0x68)
 #define OFFESTADAPT_TIMES ((uint8_t)64)
@@ -276,6 +287,11 @@ int main() {
     };
     GlobalSpeed = &speed;
     PID_Init(&speed);
+    PID turn = {
+        ENABLE, DISABLE, ENABLE, TURN_KP, 0, TURN_KD, 0,
+    };
+    GlobalTurn = &turn;
+    PID_Init(&turn);
 
     TIM tim2 = {
         RCC_APB1Periph_TIM2, TIM2, TIM_InternalClock, 7200 - 1, 50 - 1, CMD,
@@ -294,6 +310,9 @@ int main() {
     INFO("started successfully\r\n");
 
     for (;;) {
+        if (WatchState) {
+            WatchHandler(GlobalSerial);
+        }
     }
 }
 
@@ -309,20 +328,17 @@ void TIM2_IRQHandler(void) {
         speed_right = (int16_t)TIM_GetCounter(TIM4);
         TIM_SetCounter(TIM4, 0);
 
-        if (WatchState) {
-            WatchHandler(GlobalSerial);
-        }
+        stand = PID_Stand(GlobalStand, pitch, ygyro - ygyro_offset);
+        speed = PID_Speed(GlobalSpeed, speed_left, speed_right);
+        turn = PID_Turn(GlobalTurn, zgyro - zgyro_offset);
 
-        int16_t stand = PID_Stand(GlobalStand, pitch, ygyro);
-        int16_t speed = PID_Speed(GlobalSpeed, speed_left, speed_right);
-
-        pulse_left = stand + speed;
-        pulse_right = stand + speed;
+        pulse_left = stand + speed + turn;
+        pulse_right = stand + speed - turn;
         LIMIT(pulse_left, -7200, 7200);
         LIMIT(pulse_right, -7200, 7200);
 
-        Motor_SetSpeed(left, pulse_left);
-        Motor_SetSpeed(right, pulse_right);
+        Motor_SetSpeed(left, pulse_left - 1);
+        Motor_SetSpeed(right, pulse_right - 1);
 
         TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
     }
@@ -356,6 +372,10 @@ int16_t PID_Speed(PID *pid, int16_t left, int16_t right) {
     return pid->Kp * error + pid->Ki * pid->sum;
 }
 
+int16_t PID_Turn(PID *pid, int16_t zgyro) {
+    return pid->goal == 0. ? pid->Kd * zgyro : pid->Kp * pid->goal;
+}
+
 void ReceiveHandler(Serial *serial) {
     if (serial->RecieveFlag == SET) {
         switch (serial->type) {
@@ -383,6 +403,16 @@ void ReceiveHandler(Serial *serial) {
                     sscanf(input, "%f", &GlobalStand->goal);
                     INFO("successfully set %s to %f\r\n", Body,
                          GlobalStand->goal);
+                } else if (strcmp(Body, "speed") == 0) {
+                    char *input = strtok(NULL, " ");
+                    sscanf(input, "%f", &GlobalSpeed->goal);
+                    INFO("successfully set %s to %f\r\n", Body,
+                         GlobalSpeed->goal);
+                } else if (strcmp(Body, "turn") == 0) {
+                    char *input = strtok(NULL, " ");
+                    sscanf(input, "%f", &GlobalTurn->goal);
+                    INFO("successfully set %s to %f\r\n", Body,
+                         GlobalTurn->goal);
                 } else if (strcmp(Body, "standkp") == 0) {
                     char *input = strtok(NULL, " ");
                     sscanf(input, "%f", &GlobalStand->Kp);
@@ -399,6 +429,14 @@ void ReceiveHandler(Serial *serial) {
                     GlobalSpeed->Ki = GlobalSpeed->Kp / 200;
                     INFO("successfully set %s to %f\r\n", Body,
                          GlobalSpeed->Kp);
+                } else if (strcmp(Body, "turnkp") == 0) {
+                    char *input = strtok(NULL, " ");
+                    sscanf(input, "%f", &GlobalTurn->Kp);
+                    INFO("successfully set %s to %f\r\n", Body, GlobalTurn->Kp);
+                } else if (strcmp(Body, "turnkd") == 0) {
+                    char *input = strtok(NULL, " ");
+                    sscanf(input, "%f", &GlobalTurn->Kd);
+                    INFO("successfully set %s to %f\r\n", Body, GlobalTurn->Kd);
                 } else {
                     ERROR("unknow command\r\n");
                 }
@@ -416,6 +454,10 @@ void ReceiveHandler(Serial *serial) {
                     INFO("%s: %f\r\n", Body, GlobalStand->Kd);
                 } else if (strcmp(Body, "speedkp") == 0) {
                     INFO("%s: %f\r\n", Body, GlobalSpeed->Kp);
+                } else if (strcmp(Body, "turnkp") == 0) {
+                    INFO("%s: %f\r\n", Body, GlobalTurn->Kp);
+                } else if (strcmp(Body, "turnkp") == 0) {
+                    INFO("%s: %f\r\n", Body, GlobalTurn->Kd);
                 } else {
                     ERROR("unknow command\r\n");
                 }
@@ -441,9 +483,8 @@ void ReceiveHandler(Serial *serial) {
 
 void WatchHandler(Serial *serial) {
     Serial_SendString(serial, "\r");
-    Serial_SendString(serial, "pitch %+5.1f| ", pitch);
-    Serial_SendString(serial, "ygyro %+5d| ", ygyro - ygyro_offset);
-    Serial_SendString(serial, "speed_left %+4hd| ", speed_left);
-    Serial_SendString(serial, "speed_right %+4hd| ", speed_right);
+    Serial_SendString(serial, "stand %+5d| ", stand);
+    Serial_SendString(serial, "speed %+5d| ", speed);
+    Serial_SendString(serial, "turn %+5d| ", turn);
     // Serial_SendString(serial, "\r\n");
 }
