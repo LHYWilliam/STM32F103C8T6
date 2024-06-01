@@ -51,6 +51,9 @@ int16_t PID_Turn(PID *pid, int16_t zgyro);
 #define MPU6050_DEVICE_ADDRESS ((uint8_t)0x68)
 #define OFFESTADAPT_TIMES ((uint8_t)64)
 
+Encoder *GlobalEncodeLeft;
+Encoder *GlobalEncodeRight;
+
 float pitch, roll, yaw;
 int16_t xacc, yacc, zacc, xgyro, ygyro, zgyro;
 int16_t xacc_offset, yacc_offset, xgyro_offset, ygyro_offset, zgyro_offset;
@@ -247,6 +250,7 @@ int main() {
         &capture_left1,        &capture_left2,
         TIM_ICPolarity_Rising, TIM_ICPolarity_Falling,
     };
+    GlobalEncodeLeft = &encoder_left;
     INFO("starting encoder_left\r\n");
     Encoder_Init(&encoder_left);
     INFO("encoder_left started\r\n");
@@ -273,6 +277,7 @@ int main() {
         &capture_right1,       &capture_right2,
         TIM_ICPolarity_Rising, TIM_ICPolarity_Rising,
     };
+    GlobalEncodeRight = &encoder_right;
     INFO("starting encoder_right\r\n");
     Encoder_Init(&encoder_right);
     INFO("encoder_right started\r\n");
@@ -322,11 +327,8 @@ void TIM2_IRQHandler(void) {
         DMP_GetData(&pitch, &roll, &yaw);
         MPU_GetData(GlobalMPU, &xacc, &yacc, &zacc, &xgyro, &ygyro, &zgyro);
 
-        speed_left = (int16_t)TIM_GetCounter(TIM3);
-        TIM_SetCounter(TIM3, 0);
-
-        speed_right = (int16_t)TIM_GetCounter(TIM4);
-        TIM_SetCounter(TIM4, 0);
+        speed_left = Encoder_Get(GlobalEncodeLeft);
+        speed_right = Encoder_Get(GlobalEncodeRight);
 
         stand = PID_Stand(GlobalStand, pitch, ygyro - ygyro_offset);
         speed = PID_Speed(GlobalSpeed, speed_left, speed_right);
@@ -337,8 +339,8 @@ void TIM2_IRQHandler(void) {
         LIMIT(pulse_left, -7200, 7200);
         LIMIT(pulse_right, -7200, 7200);
 
-        Motor_SetSpeed(left, pulse_left - 1);
-        Motor_SetSpeed(right, pulse_right - 1);
+        Motor_Set(left, pulse_left - 1);
+        Motor_Set(right, pulse_right - 1);
 
         TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
     }
@@ -383,8 +385,30 @@ void ReceiveHandler(Serial *serial) {
             Serial_SendString(serial, "\r");
             INFO("received Byte [%d]\r\n", serial->ByteData);
 
-            if (serial->ByteData == 0x0D) {
+            switch (serial->ByteData) {
+            case 0x0D:
                 WatchState = DISABLE;
+                break;
+
+            case 0x57:
+                GlobalSpeed->goal =
+                    GlobalSpeed->goal < 0 ? 0 : GlobalSpeed->goal + 10;
+                break;
+
+            case 0x53:
+                GlobalSpeed->goal =
+                    GlobalSpeed->goal > 0 ? 0 : GlobalSpeed->goal - 10;
+                break;
+
+            case 0x41:
+                GlobalTurn->goal =
+                    GlobalTurn->goal > 0 ? 0 : GlobalTurn->goal - 10;
+                break;
+
+            case 0x44:
+                GlobalTurn->goal =
+                    GlobalTurn->goal < 0 ? 0 : GlobalTurn->goal + 10;
+                break;
             }
             break;
 
