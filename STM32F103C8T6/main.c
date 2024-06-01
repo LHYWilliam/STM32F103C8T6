@@ -23,6 +23,9 @@
 #include "tim.h"
 #include "usart.h"
 
+#define MPU6050_DEVICE_ADDRESS ((uint8_t)0x68)
+#define OFFESTADAPT_TIMES ((uint8_t)64)
+
 #define ZERO 0.5f
 
 #define STAND_KP -300.f
@@ -39,26 +42,15 @@
 #define TURN_KD +1.f
 
 int16_t stand, speed, turn;
-
-PID *GlobalStand;
-PID *GlobalSpeed;
-PID *GlobalTurn;
-
-int16_t PID_Stand(PID *pid, float pitch, int16_t ygyro);
-int16_t PID_Speed(PID *pid, int16_t left, int16_t right);
-int16_t PID_Turn(PID *pid, int16_t zgyro);
-
-#define MPU6050_DEVICE_ADDRESS ((uint8_t)0x68)
-#define OFFESTADAPT_TIMES ((uint8_t)64)
-
-Encoder *GlobalEncodeLeft;
-Encoder *GlobalEncodeRight;
+PID *GlobalStand, *GlobalSpeed, *GlobalTurn;
 
 float pitch, roll, yaw;
 int16_t xacc, yacc, zacc, xgyro, ygyro, zgyro;
 int16_t xacc_offset, yacc_offset, xgyro_offset, ygyro_offset, zgyro_offset;
 
 Motor *left, *right;
+Encoder *GlobalEncodeLeft, *GlobalEncodeRight;
+
 int16_t speed_left = 0, speed_right = 0;
 int16_t pulse_left = 0, pulse_right = 0;
 
@@ -67,6 +59,10 @@ MPU *GlobalMPU;
 Serial *GlobalSerial;
 
 uint8_t WatchState = DISABLE;
+
+int16_t PID_Stand(PID *pid, float pitch, int16_t ygyro);
+int16_t PID_Speed(PID *pid, int16_t left, int16_t right);
+int16_t PID_Turn(PID *pid, int16_t zgyro);
 
 void ReceiveHandler(Serial *serial);
 void WatchHandler(Serial *serial);
@@ -135,10 +131,10 @@ int main() {
     INFO("starting MPU\r\n");
     MPU_Init(&mpu);
     INFO("MPU started\r\n");
-    INFO("MPU adapting offset\r\n");
-    MPU_AdaptOffset(&mpu, OFFESTADAPT_TIMES, &xacc_offset, &yacc_offset,
-                    &xgyro_offset, &ygyro_offset, &zgyro_offset);
-    INFO("MPU adapting offset succeeded\r\n");
+    // INFO("MPU adapting offset\r\n");
+    // MPU_AdaptOffset(&mpu, OFFESTADAPT_TIMES, &xacc_offset, &yacc_offset,
+    //                 &xgyro_offset, &ygyro_offset, &zgyro_offset);
+    // INFO("MPU adapting offset succeeded\r\n");
 
     INFO("starting DMP\r\n");
     DMP_Init();
@@ -330,9 +326,9 @@ void TIM2_IRQHandler(void) {
         speed_left = Encoder_Get(GlobalEncodeLeft);
         speed_right = Encoder_Get(GlobalEncodeRight);
 
-        stand = PID_Stand(GlobalStand, pitch, ygyro - ygyro_offset);
+        stand = PID_Stand(GlobalStand, pitch, ygyro);
         speed = PID_Speed(GlobalSpeed, speed_left, speed_right);
-        turn = PID_Turn(GlobalTurn, zgyro - zgyro_offset);
+        turn = PID_Turn(GlobalTurn, zgyro);
 
         pulse_left = stand + speed + turn;
         pulse_right = stand + speed - turn;
@@ -383,7 +379,7 @@ void ReceiveHandler(Serial *serial) {
         switch (serial->type) {
         case Byte:
             Serial_SendString(serial, "\r");
-            INFO("received Byte [%d]\r\n", serial->ByteData);
+            INFO("received Byte [%c]\r\n", serial->ByteData);
 
             switch (serial->ByteData) {
             case 0x0D:
@@ -492,6 +488,7 @@ void ReceiveHandler(Serial *serial) {
             } else if (strcmp(Head, "reset") == 0) {
                 INFO("call reset succeeeded\r\n");
                 NVIC_SystemReset();
+
             } else {
                 ERROR("unknow command\r\n");
             }

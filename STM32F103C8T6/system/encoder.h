@@ -16,4 +16,6 @@ typedef struct {
 
 void Encoder_Init(Encoder *encoder);
 
+int16_t Encoder_Get(Encoder *encoder);
+
 #endif

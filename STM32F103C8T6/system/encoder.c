@@ -1,5 +1,6 @@
 #include "stm32f10x_tim.h"
 
+#include <stdint.h>
 #include <stdlib.h>
 
 #include "capture.h"
@@ -19,4 +20,11 @@ void Encoder_Init(Encoder *encoder) {
 
     TIM_Cmd(encoder->tim->TIMx, ENABLE);
     TIM_ClearFlag(encoder->tim->TIMx, TIM_FLAG_Update);
+}
+
+int16_t Encoder_Get(Encoder *encoder) {
+    int16_t speed = (int16_t)TIM_GetCounter(encoder->tim->TIMx);
+    TIM_SetCounter(encoder->tim->TIMx, 0);
+
+    return speed;
 }
