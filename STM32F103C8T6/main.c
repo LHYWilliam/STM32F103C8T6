@@ -26,44 +26,38 @@
 #define MPU6050_DEVICE_ADDRESS ((uint8_t)0x68)
 #define OFFESTADAPT_TIMES ((uint8_t)64)
 
-#define ZERO 0.5f
+#define ZERO -3.f
 
 #define STAND_KP -300.f
 #define STAND_KD -1.5f
-// #define STAND_KP -300.f
-// #define STAND_KD -1.5f
+// #define STAND_KP -450.f
+// #define STAND_KD -1.1f
 
 #define SPEED_KP +300.f
 #define SPEED_KI SPEED_KP / 200
-// #define SPEED_KP +300.f
+// #define SPEED_KP +250.f
 // #define SPEED_KI SPEED_KP / 200
 
 #define TURN_KP +20.f
 #define TURN_KD +1.f
-
-int16_t stand, speed, turn;
-PID *GlobalStand, *GlobalSpeed, *GlobalTurn;
-
-float pitch, roll, yaw;
-int16_t xacc, yacc, zacc, xgyro, ygyro, zgyro;
-int16_t xacc_offset, yacc_offset, xgyro_offset, ygyro_offset, zgyro_offset;
-
-Motor *left, *right;
-Encoder *GlobalEncodeLeft, *GlobalEncodeRight;
-
-int16_t speed_left = 0, speed_right = 0;
-int16_t pulse_left = 0, pulse_right = 0;
+// #define TURN_KP +25.f
+// #define TURN_KD +1.f
 
 I2C *GlobalI2C;
-MPU *GlobalMPU;
 Serial *GlobalSerial;
 
-uint8_t WatchState = DISABLE;
+MPU mpu;
+Motor motor_left, motor_right;
+Encoder encoder_left, encoder_right;
+PID stand, speed, turn;
+
+int16_t xacc_offset, yacc_offset, xgyro_offset, ygyro_offset, zgyro_offset;
 
 int16_t PID_Stand(PID *pid, float pitch, int16_t ygyro);
 int16_t PID_Speed(PID *pid, int16_t left, int16_t right);
 int16_t PID_Turn(PID *pid, int16_t zgyro);
 
+uint8_t WatchState = DISABLE;
 void ReceiveHandler(Serial *serial);
 void WatchHandler(Serial *serial);
 
@@ -123,18 +117,17 @@ int main() {
         50000,
     };
     GlobalI2C = &i2c;
-    MPU mpu = {
+    mpu = (MPU){
         &i2c,
         MPU6050_DEVICE_ADDRESS,
     };
-    GlobalMPU = &mpu;
     INFO("starting MPU\r\n");
     MPU_Init(&mpu);
     INFO("MPU started\r\n");
-    // INFO("MPU adapting offset\r\n");
-    // MPU_AdaptOffset(&mpu, OFFESTADAPT_TIMES, &xacc_offset, &yacc_offset,
-    //                 &xgyro_offset, &ygyro_offset, &zgyro_offset);
-    // INFO("MPU adapting offset succeeded\r\n");
+    INFO("MPU adapting offset\r\n");
+    MPU_AdaptOffset(&mpu, OFFESTADAPT_TIMES, &xacc_offset, &yacc_offset,
+                    &xgyro_offset, &ygyro_offset, &zgyro_offset);
+    INFO("MPU adapting offset succeeded\r\n");
 
     INFO("starting DMP\r\n");
     DMP_Init();
@@ -174,12 +167,11 @@ int main() {
         &gpio_pwm_left,
         DISABLE,
     };
-    Motor motor_left = {
+    motor_left = (Motor){
         &pwm_left,
         &gpio_direction_left_1,
         &gpio_direction_left_2,
     };
-    left = &motor_left;
     INFO("motor_left DMP\r\n");
     Motor_Init(&motor_left);
     INFO("motor_left started\r\n");
@@ -214,12 +206,11 @@ int main() {
         GPIO_Pin_15,
         GPIO_Mode_Out_PP,
     };
-    Motor motor_right = {
+    motor_right = (Motor){
         &pwm_right,
         &gpio_direction_right_1,
         &gpio_direction_right_2,
     };
-    right = &motor_right;
     INFO("motor_right DMP\r\n");
     Motor_Init(&motor_right);
     INFO("motor_right started\r\n");
@@ -241,12 +232,11 @@ int main() {
         TIM3, TIM_Channel_2,   TIM_ICPolarity_Rising, TIM_ICSelection_DirectTI,
         0xF,  TIM_GetCapture2,
     };
-    Encoder encoder_left = {
+    encoder_left = (Encoder){
         &gpio_encoder_left,    &tim_left,
         &capture_left1,        &capture_left2,
         TIM_ICPolarity_Rising, TIM_ICPolarity_Falling,
     };
-    GlobalEncodeLeft = &encoder_left;
     INFO("starting encoder_left\r\n");
     Encoder_Init(&encoder_left);
     INFO("encoder_left started\r\n");
@@ -268,30 +258,26 @@ int main() {
         TIM4, TIM_Channel_2,   TIM_ICPolarity_Rising, TIM_ICSelection_DirectTI,
         0xF,  TIM_GetCapture2,
     };
-    Encoder encoder_right = {
+    encoder_right = (Encoder){
         &gpio_encoder_right,   &tim_right,
         &capture_right1,       &capture_right2,
         TIM_ICPolarity_Rising, TIM_ICPolarity_Rising,
     };
-    GlobalEncodeRight = &encoder_right;
     INFO("starting encoder_right\r\n");
     Encoder_Init(&encoder_right);
     INFO("encoder_right started\r\n");
 
-    PID stand = {
+    stand = (PID){
         ENABLE, DISABLE, ENABLE, STAND_KP, 0, STAND_KD, ZERO,
     };
-    GlobalStand = &stand;
     PID_Init(&stand);
-    PID speed = {
+    speed = (PID){
         ENABLE, ENABLE, DISABLE, SPEED_KP, SPEED_KI, 0, 0,
     };
-    GlobalSpeed = &speed;
     PID_Init(&speed);
-    PID turn = {
+    turn = (PID){
         ENABLE, DISABLE, ENABLE, TURN_KP, 0, TURN_KD, 0,
     };
-    GlobalTurn = &turn;
     PID_Init(&turn);
 
     TIM tim2 = {
@@ -318,25 +304,32 @@ int main() {
 }
 
 void TIM2_IRQHandler(void) {
+    static float pitch, roll, yaw;
+    static int16_t xacc, yacc, zacc, xgyro, ygyro, zgyro;
+
+    static int16_t speed_left, speed_right;
+    static int16_t left_pulse, right_pulse;
+    static int16_t stand_pulse, speed_pulse, turn_pulse;
+
     if (TIM_GetITStatus(TIM2, TIM_IT_Update) == SET) {
 
         DMP_GetData(&pitch, &roll, &yaw);
-        MPU_GetData(GlobalMPU, &xacc, &yacc, &zacc, &xgyro, &ygyro, &zgyro);
+        MPU_GetData(&mpu, &xacc, &yacc, &zacc, &xgyro, &ygyro, &zgyro);
 
-        speed_left = Encoder_Get(GlobalEncodeLeft);
-        speed_right = Encoder_Get(GlobalEncodeRight);
+        speed_left = Encoder_Get(&encoder_left);
+        speed_right = Encoder_Get(&encoder_right);
 
-        stand = PID_Stand(GlobalStand, pitch, ygyro);
-        speed = PID_Speed(GlobalSpeed, speed_left, speed_right);
-        turn = PID_Turn(GlobalTurn, zgyro);
+        stand_pulse = PID_Stand(&stand, pitch, ygyro - ygyro_offset);
+        speed_pulse = PID_Speed(&speed, speed_left, speed_right);
+        turn_pulse = PID_Turn(&turn, zgyro - zgyro_offset);
 
-        pulse_left = stand + speed + turn;
-        pulse_right = stand + speed - turn;
-        LIMIT(pulse_left, -7200, 7200);
-        LIMIT(pulse_right, -7200, 7200);
+        left_pulse = stand_pulse + speed_pulse + turn_pulse;
+        right_pulse = stand_pulse + speed_pulse - turn_pulse;
+        LIMIT(left_pulse, -7200, 7200);
+        LIMIT(right_pulse, -7200, 7200);
 
-        Motor_Set(left, pulse_left - 1);
-        Motor_Set(right, pulse_right - 1);
+        Motor_Set(&motor_left, left_pulse - 1);
+        Motor_Set(&motor_right, right_pulse - 1);
 
         TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
     }
@@ -353,13 +346,15 @@ void USART3_IRQHandler(void) {
 }
 
 int16_t PID_Stand(PID *pid, float pitch, int16_t ygyro) {
-    float error = pid->goal - pitch;
+    static float error;
+    error = pid->goal - pitch;
 
     return pid->Kp * error + pid->Kd * ygyro;
 }
 
 int16_t PID_Speed(PID *pid, int16_t left, int16_t right) {
-    int16_t error = left + right - pid->goal;
+    static float error;
+    error = left + right - pid->goal;
     error = pid->last * 0.8 + error * 0.2;
 
     pid->sum += error;
@@ -387,23 +382,19 @@ void ReceiveHandler(Serial *serial) {
                 break;
 
             case 0x57:
-                GlobalSpeed->goal =
-                    GlobalSpeed->goal < 0 ? 0 : GlobalSpeed->goal + 10;
+                speed.goal = speed.goal < 0 ? 0 : speed.goal + 10;
                 break;
 
             case 0x53:
-                GlobalSpeed->goal =
-                    GlobalSpeed->goal > 0 ? 0 : GlobalSpeed->goal - 10;
+                speed.goal = speed.goal > 0 ? 0 : speed.goal - 10;
                 break;
 
             case 0x41:
-                GlobalTurn->goal =
-                    GlobalTurn->goal > 0 ? 0 : GlobalTurn->goal - 10;
+                turn.goal = turn.goal > 0 ? 0 : turn.goal - 10;
                 break;
 
             case 0x44:
-                GlobalTurn->goal =
-                    GlobalTurn->goal < 0 ? 0 : GlobalTurn->goal + 10;
+                turn.goal = turn.goal < 0 ? 0 : turn.goal + 10;
                 break;
             }
             break;
@@ -420,43 +411,37 @@ void ReceiveHandler(Serial *serial) {
 
                 if (strcmp(Body, "zero") == 0) {
                     char *input = strtok(NULL, " ");
-                    sscanf(input, "%f", &GlobalStand->goal);
-                    INFO("successfully set %s to %f\r\n", Body,
-                         GlobalStand->goal);
+                    sscanf(input, "%f", &stand.goal);
+                    INFO("successfully set %s to %f\r\n", Body, stand.goal);
                 } else if (strcmp(Body, "speed") == 0) {
                     char *input = strtok(NULL, " ");
-                    sscanf(input, "%f", &GlobalSpeed->goal);
-                    INFO("successfully set %s to %f\r\n", Body,
-                         GlobalSpeed->goal);
+                    sscanf(input, "%f", &speed.goal);
+                    INFO("successfully set %s to %f\r\n", Body, speed.goal);
                 } else if (strcmp(Body, "turn") == 0) {
                     char *input = strtok(NULL, " ");
-                    sscanf(input, "%f", &GlobalTurn->goal);
-                    INFO("successfully set %s to %f\r\n", Body,
-                         GlobalTurn->goal);
+                    sscanf(input, "%f", &turn.goal);
+                    INFO("successfully set %s to %f\r\n", Body, turn.goal);
                 } else if (strcmp(Body, "standkp") == 0) {
                     char *input = strtok(NULL, " ");
-                    sscanf(input, "%f", &GlobalStand->Kp);
-                    INFO("successfully set %s to %f\r\n", Body,
-                         GlobalStand->Kp);
+                    sscanf(input, "%f", &stand.Kp);
+                    INFO("successfully set %s to %f\r\n", Body, stand.Kp);
                 } else if (strcmp(Body, "standkd") == 0) {
                     char *input = strtok(NULL, " ");
-                    sscanf(input, "%f", &GlobalStand->Kd);
-                    INFO("successfully set %s to %f\r\n", Body,
-                         GlobalStand->Kd);
+                    sscanf(input, "%f", &stand.Kd);
+                    INFO("successfully set %s to %f\r\n", Body, stand.Kd);
                 } else if (strcmp(Body, "speedkp") == 0) {
                     char *input = strtok(NULL, " ");
-                    sscanf(input, "%f", &GlobalSpeed->Kp);
-                    GlobalSpeed->Ki = GlobalSpeed->Kp / 200;
-                    INFO("successfully set %s to %f\r\n", Body,
-                         GlobalSpeed->Kp);
+                    sscanf(input, "%f", &speed.Kp);
+                    speed.Ki = speed.Kp / 200;
+                    INFO("successfully set %s to %f\r\n", Body, speed.Kp);
                 } else if (strcmp(Body, "turnkp") == 0) {
                     char *input = strtok(NULL, " ");
-                    sscanf(input, "%f", &GlobalTurn->Kp);
-                    INFO("successfully set %s to %f\r\n", Body, GlobalTurn->Kp);
+                    sscanf(input, "%f", &turn.Kp);
+                    INFO("successfully set %s to %f\r\n", Body, turn.Kp);
                 } else if (strcmp(Body, "turnkd") == 0) {
                     char *input = strtok(NULL, " ");
-                    sscanf(input, "%f", &GlobalTurn->Kd);
-                    INFO("successfully set %s to %f\r\n", Body, GlobalTurn->Kd);
+                    sscanf(input, "%f", &turn.Kd);
+                    INFO("successfully set %s to %f\r\n", Body, turn.Kd);
                 } else {
                     ERROR("unknow command\r\n");
                 }
@@ -467,17 +452,17 @@ void ReceiveHandler(Serial *serial) {
                 char *Body = strtok(NULL, " ");
 
                 if (strcmp(Body, "zero") == 0) {
-                    INFO("%s: %f\r\n", Body, GlobalStand->goal);
+                    INFO("%s: %f\r\n", Body, stand.goal);
                 } else if (strcmp(Body, "standkp") == 0) {
-                    INFO("%s: %f\r\n", Body, GlobalStand->Kp);
+                    INFO("%s: %f\r\n", Body, stand.Kp);
                 } else if (strcmp(Body, "standkd") == 0) {
-                    INFO("%s: %f\r\n", Body, GlobalStand->Kd);
+                    INFO("%s: %f\r\n", Body, stand.Kd);
                 } else if (strcmp(Body, "speedkp") == 0) {
-                    INFO("%s: %f\r\n", Body, GlobalSpeed->Kp);
+                    INFO("%s: %f\r\n", Body, speed.Kp);
                 } else if (strcmp(Body, "turnkp") == 0) {
-                    INFO("%s: %f\r\n", Body, GlobalTurn->Kp);
+                    INFO("%s: %f\r\n", Body, turn.Kp);
                 } else if (strcmp(Body, "turnkp") == 0) {
-                    INFO("%s: %f\r\n", Body, GlobalTurn->Kd);
+                    INFO("%s: %f\r\n", Body, turn.Kd);
                 } else {
                     ERROR("unknow command\r\n");
                 }
@@ -502,10 +487,4 @@ void ReceiveHandler(Serial *serial) {
     }
 }
 
-void WatchHandler(Serial *serial) {
-    Serial_SendString(serial, "\r");
-    Serial_SendString(serial, "stand %+5d| ", stand);
-    Serial_SendString(serial, "speed %+5d| ", speed);
-    Serial_SendString(serial, "turn %+5d| ", turn);
-    // Serial_SendString(serial, "\r\n");
-}
+void WatchHandler(Serial *serial) {}
