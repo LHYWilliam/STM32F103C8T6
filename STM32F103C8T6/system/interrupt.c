@@ -40,6 +40,8 @@ void TIM_Interrupt_Init(TIM_Interrupt *interrupt) {
         ENABLE,
     };
     NVIC_Init(&NVIC_InitStruct);
+
+    TIM_Cmd(interrupt->TIMx, ENABLE);
 }
 
 void USART_Interrupt_Init(USART_Interrupt *interrupt) {
