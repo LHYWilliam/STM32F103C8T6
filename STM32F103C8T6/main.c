@@ -132,28 +132,16 @@ int main() {
         .TIM_OCInit = TIM_OC4Init,
         .TIM_SetCompare = TIM_SetCompare4,
     };
-    GPIO gpio_pwm_left = {
-        .GPIOxPiny = "A11",
-        .GPIO_Mode = GPIO_Mode_AF_PP,
-    };
-    GPIO gpio_direction_left_1 = {
-        .GPIOxPiny = "B12",
-        .GPIO_Mode = GPIO_Mode_Out_PP,
-    };
-    GPIO gpio_direction_left_2 = {
-        .GPIOxPiny = "B13",
-        .GPIO_Mode = GPIO_Mode_Out_PP,
-    };
     PWM pwm_left = {
         .tim = &tim_pwm,
         .compare = &compare_left,
-        .gpio = &gpio_pwm_left,
+        .gpio = "A11",
         .Init_Mode = DISABLE,
     };
     motor_left = (Motor){
         .pwm = &pwm_left,
-        .gpio_direction1 = &gpio_direction_left_1,
-        .gpio_direction2 = &gpio_direction_left_2,
+        .direction1 = "B12",
+        .direction2 = "B13",
     };
     INFO("motor_left DMP\r\n");
     Motor_Init(&motor_left);
@@ -165,28 +153,16 @@ int main() {
         .TIM_OCInit = TIM_OC1Init,
         .TIM_SetCompare = TIM_SetCompare1,
     };
-    GPIO gpio_pwm_right = {
-        .GPIOxPiny = "A8",
-        .GPIO_Mode = GPIO_Mode_AF_PP,
-    };
     PWM pwm_right = {
         .tim = &tim_pwm,
         .compare = &compare_right,
-        .gpio = &gpio_pwm_right,
+        .gpio = "A8",
         .Init_Mode = DISABLE,
-    };
-    GPIO gpio_direction_right_1 = {
-        .GPIOxPiny = "B14",
-        .GPIO_Mode = GPIO_Mode_Out_PP,
-    };
-    GPIO gpio_direction_right_2 = {
-        .GPIOxPiny = "B15",
-        .GPIO_Mode = GPIO_Mode_Out_PP,
     };
     motor_right = (Motor){
         .pwm = &pwm_right,
-        .gpio_direction1 = &gpio_direction_right_1,
-        .gpio_direction2 = &gpio_direction_right_2,
+        .direction1 = "B14",
+        .direction2 = "B15",
     };
     INFO("motor_right DMP\r\n");
     Motor_Init(&motor_right);

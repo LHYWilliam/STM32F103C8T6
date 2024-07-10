@@ -2,6 +2,7 @@
 #include "stm32f10x_tim.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "compare.h"
 #include "gpio.h"
@@ -11,8 +12,14 @@ void PWM_Init(PWM *pwm) {
     if (pwm->Init_Mode == ENABLE) {
         TIM_Init(pwm->tim, NULL);
     }
+
     Compare_Init(pwm->compare);
-    GPIO_Init_(pwm->gpio);
+
+    GPIO gpio = {
+        .GPIO_Mode = GPIO_Mode_AF_PP,
+    };
+    strcpy(gpio.GPIOxPiny, pwm->gpio);
+    GPIO_Init_(&gpio);
 }
 
 void PWM_SetPrescaler(PWM *pwm, uint16_t prescaler) {

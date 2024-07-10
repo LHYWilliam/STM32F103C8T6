@@ -2,14 +2,13 @@
 #define __PWM_H
 
 #include "compare.h"
-#include "gpio.h"
 #include "tim.h"
 #include <stdint.h>
 
 typedef struct {
     TIM *tim;
     Compare *compare;
-    GPIO *gpio;
+    char gpio[4];
     uint8_t Init_Mode;
 } PWM;
 
