@@ -5,6 +5,7 @@
 
 #include "gpio.h"
 #include "serial.h"
+#include "usart.h"
 
 void Serial_Init(Serial *serial) {
     if (serial->TX[0]) {
@@ -14,6 +15,7 @@ void Serial_Init(Serial *serial) {
         strcpy(TX.GPIOxPiny, serial->TX);
         GPIO_Init_(&TX);
     }
+
     if (serial->RX[0]) {
         GPIO RX = {
             .GPIO_Mode = GPIO_Mode_IPU,
@@ -22,7 +24,13 @@ void Serial_Init(Serial *serial) {
         GPIO_Init_(&RX);
     }
 
-    USART_Init_(serial->usart);
+    USART usart = {
+        .RCC_APBPeriph = RCC_APBPeriphx_USARTx(serial->USARTx),
+        .USARTx = serial->USARTx,
+        .USART_Mode = (serial->TX[0] ? USART_Mode_Tx : 0) |
+                      (serial->RX[0] ? USART_Mode_Rx : 0),
+    };
+    USART_Init_(&usart);
 
     serial->count = 0;
     serial->RecieveFlag = RESET;
@@ -30,9 +38,9 @@ void Serial_Init(Serial *serial) {
 }
 
 void Serial_SendByte(Serial *serial, uint8_t byte) {
-    while (USART_GetFlagStatus(serial->usart->USARTx, USART_FLAG_TXE) == RESET)
+    while (USART_GetFlagStatus(serial->USARTx, USART_FLAG_TXE) == RESET)
         ;
-    USART_SendData(serial->usart->USARTx, byte);
+    USART_SendData(serial->USARTx, byte);
 }
 
 void Serial_SendHex(Serial *serial, uint8_t byte) {
@@ -63,7 +71,7 @@ void Serial_SendStringPack(Serial *serial, char *string) {
 }
 
 void Serial_Parse(Serial *serial) {
-    serial->ByteData = USART_ReceiveData(serial->usart->USARTx);
+    serial->ByteData = USART_ReceiveData(serial->USARTx);
 
     switch (serial->type) {
     case None:

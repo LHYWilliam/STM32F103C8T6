@@ -70,15 +70,10 @@ void WatchHandler(Serial *serial);
 int main() {
     RTC_Init();
 
-    USART usart = {
-        .RCC_APBPeriph = RCC_APB1Periph_USART3,
-        .USARTx = USART3,
-        .USART_Mode = USART_Mode_Tx | USART_Mode_Rx,
-    };
     Serial serial = {
         .TX = "B10",
         .RX = "B11",
-        .usart = &usart,
+        .USARTx = USART3,
     };
     GlobalSerial = &serial;
     Serial_Init(&serial);

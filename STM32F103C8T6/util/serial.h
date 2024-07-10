@@ -1,10 +1,11 @@
 #ifndef __SERIAL_H
 #define __SERIAL_H
 
+#include "stm32f10x.h"
+
 #include <stdint.h>
 
 #include "rtc.h"
-#include "usart.h"
 
 #define INFO(args...)                                                          \
     do {                                                                       \
@@ -28,7 +29,7 @@ typedef enum {
 typedef struct {
     char TX[4];
     char RX[4];
-    USART *usart;
+    USART_TypeDef *USARTx;
 
     uint8_t count;
     uint8_t RecieveFlag;
