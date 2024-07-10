@@ -21,7 +21,6 @@
 #include "rtc.h"
 #include "serial.h"
 #include "tim.h"
-#include "usart.h"
 
 #define MPU6050_DEVICE_ADDRESS ((uint8_t)0x68)
 #define OFFESTADAPT_TIMES ((uint8_t)64)
@@ -93,27 +92,22 @@ int main() {
     USART_Interrupt_Init(&interrupt);
     INFO("USART interrupt started\r\n");
 
-    GPIO SCL = {
-        .GPIOxPiny = "B8",
-        .GPIO_Mode = GPIO_Mode_Out_PP,
-    };
-    GPIO SDA = {
-        .GPIOxPiny = "B9",
-        .GPIO_Mode = GPIO_Mode_Out_PP,
-    };
     I2C i2c = {
-        .SCL = &SCL,
-        .SDA = &SDA,
-        .frequency = 50000,
+        .SCL = "B8",
+        .SDA = "B9",
     };
     GlobalI2C = &i2c;
+    INFO("starting I2C\r\n");
+    I2C_Init_(&i2c);
+    INFO("I2C started\r\n");
+
     mpu = (MPU){
-        .i2c = &i2c,
         .DeviceAddress = MPU6050_DEVICE_ADDRESS,
     };
     INFO("starting MPU\r\n");
     MPU_Init(&mpu);
     INFO("MPU started\r\n");
+
     INFO("MPU adapting offset\r\n");
     MPU_AdaptOffset(&mpu, OFFESTADAPT_TIMES, &xacc_offset, &yacc_offset,
                     &xgyro_offset, &ygyro_offset, &zgyro_offset);

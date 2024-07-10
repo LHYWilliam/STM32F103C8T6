@@ -36,13 +36,10 @@
 #define MPU6050_GYRO_ZOUT_L ((uint8_t)0x48)
 
 typedef struct {
-    I2C *i2c;
-
     uint8_t DeviceAddress;
 } MPU;
 
 void MPU_Init(MPU *mpu);
-void MPU_Cmd(MPU *mpu);
 
 void MPU_Send(MPU *mpu, uint8_t RegisterAddress, const uint8_t *bytes,
               uint8_t length);
@@ -55,7 +52,5 @@ void MPU_GetData(MPU *mpu, int16_t *xacc, int16_t *yacc, int16_t *zacc,
 void MPU_AdaptOffset(MPU *mpu, uint16_t times, int16_t *xacc_offset,
                      int16_t *yacc_offset, int16_t *xgyro_offset,
                      int16_t *ygyro_offset, int16_t *zgyro_offset);
-void MPU_Kalman(MPU *mpu, float *roll, float *pitch, int16_t xacc, int16_t yacc,
-                int16_t zacc, int16_t xgyro, int16_t ygyro, int16_t zgyro);
 
 #endif

@@ -1,15 +1,26 @@
 #include "stm32f10x_gpio.h"
 
+#include <string.h>
+
 #include "delay.h"
 #include "gpio.h"
 #include "i2c.h"
 
 void I2C_Init_(I2C *i2c) {
-    GPIO_Init_(i2c->SCL);
-    GPIO_Init_(i2c->SDA);
+    GPIO SCL = {
+        .GPIO_Mode = GPIO_Mode_Out_PP,
+    };
+    strcpy(SCL.GPIOxPiny, i2c->SCL);
+    GPIO_Init_(&SCL);
 
-    GPIO_WriteBit(i2c->SCL->GPIOx, i2c->SCL->GPIO_Pin, (BitAction)1);
-    GPIO_WriteBit(i2c->SDA->GPIOx, i2c->SDA->GPIO_Pin, (BitAction)1);
+    GPIO SDA = {
+        .GPIO_Mode = GPIO_Mode_Out_PP,
+    };
+    strcpy(SDA.GPIOxPiny, i2c->SDA);
+    GPIO_Init_(&SDA);
+
+    GPIO_WriteBit(GPIOx(i2c->SCL), GPIO_Pinx(i2c->SCL), (BitAction)1);
+    GPIO_WriteBit(GPIOx(i2c->SDA), GPIO_Pinx(i2c->SDA), (BitAction)1);
 }
 
 void I2C_Start(I2C *i2c) {

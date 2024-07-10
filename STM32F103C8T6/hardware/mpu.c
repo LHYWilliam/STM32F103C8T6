@@ -1,16 +1,11 @@
-#include <math.h>
 #include <stdint.h>
 
 #include "i2c.h"
 #include "mpu.h"
-#include "rtc.h"
+
+extern I2C *GlobalI2C;
 
 void MPU_Init(MPU *mpu) {
-    I2C_Init_(mpu->i2c);
-    MPU_Cmd(mpu);
-}
-
-void MPU_Cmd(MPU *mpu) {
     const uint8_t PWR_MGMT_1 = 0x01;
     const uint8_t PWR_MGMT_2 = 0x00;
 
@@ -67,57 +62,11 @@ void MPU_GetData(MPU *mpu, int16_t *xacc, int16_t *yacc, int16_t *zacc,
     *zgyro = (gyro[4] << 8) | gyro[5];
 }
 
-void MPU_Kalman(MPU *mpu, float *roll, float *pitch, int16_t xacc, int16_t yacc,
-                int16_t zacc, int16_t xgyro, int16_t ygyro, int16_t zgyro) {
-    static uint32_t lasttime, now = 0.;
-    static float k_roll = 0, k_pitch = 0;
-    static const float rad2deg = 57.29578;
-    static float e_P[2][2] = {{1, 0}, {0, 1}};
-    static float k_k[2][2] = {{0, 0}, {0, 0}};
-
-    now = RTC_time_ms();
-    float dt = (now - lasttime) / 1000.0;
-    lasttime = RTC_time_ms();
-
-    float roll_v = xgyro +
-                   ((sin(k_pitch) * sin(k_roll)) / cos(k_pitch)) * ygyro +
-                   ((sin(k_pitch) * cos(k_roll)) / cos(k_pitch)) * zgyro;
-    float pitch_v = cos(k_roll) * ygyro - sin(k_roll) * zgyro;
-    float gyro_roll = k_roll + dt * roll_v;
-    float gyro_pitch = k_pitch + dt * pitch_v;
-
-    e_P[0][0] = e_P[0][0] + 0.0025;
-    e_P[0][1] = e_P[0][1] + 0;
-    e_P[1][0] = e_P[1][0] + 0;
-    e_P[1][1] = e_P[1][1] + 0.0025;
-
-    k_k[0][0] = e_P[0][0] / (e_P[0][0] + 0.3);
-    k_k[0][1] = 0;
-    k_k[1][0] = 0;
-    k_k[1][1] = e_P[1][1] / (e_P[1][1] + 0.3);
-
-    float acc_roll = atan(1.0 * yacc / zacc) * rad2deg;
-
-    float acc_pitch =
-        -1 * atan(xacc / sqrt(yacc * yacc + zacc * zacc)) * rad2deg;
-
-    k_roll = gyro_roll + k_k[0][0] * (acc_roll - gyro_roll);
-    k_pitch = gyro_pitch + k_k[1][1] * (acc_pitch - gyro_pitch);
-
-    e_P[0][0] = (1 - k_k[0][0]) * e_P[0][0];
-    e_P[0][1] = 0;
-    e_P[1][0] = 0;
-    e_P[1][1] = (1 - k_k[1][1]) * e_P[1][1];
-
-    *roll = k_roll;
-    *pitch = k_pitch;
-}
-
 void MPU_Send(MPU *mpu, uint8_t RegisterAddress, const uint8_t *bytes,
               uint8_t length) {
-    I2C_Send(mpu->i2c, mpu->DeviceAddress, RegisterAddress, bytes, length);
+    I2C_Send(GlobalI2C, mpu->DeviceAddress, RegisterAddress, bytes, length);
 }
 void MPU_Receieve(MPU *mpu, uint8_t RegisterAddress, uint8_t *bytes,
                   uint8_t length) {
-    I2C_Receive(mpu->i2c, mpu->DeviceAddress, RegisterAddress, bytes, length);
+    I2C_Receive(GlobalI2C, mpu->DeviceAddress, RegisterAddress, bytes, length);
 }

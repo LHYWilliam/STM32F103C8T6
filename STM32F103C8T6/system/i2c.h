@@ -21,9 +21,8 @@
 #define I2C_READ_SDA PBin(9)
 
 typedef struct {
-    GPIO *SCL;
-    GPIO *SDA;
-    uint16_t frequency;
+    char SCL[4];
+    char SDA[4];
 } I2C;
 
 void I2C_Init_(I2C *i2c);
