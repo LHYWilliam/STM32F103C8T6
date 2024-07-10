@@ -45,11 +45,36 @@
 #define PGout(n) BIT_ADDR(GPIOG_ODR_Addr, n)
 #define PGin(n) BIT_ADDR(GPIOG_IDR_Addr, n)
 
+#define RCC_APB2Periph_GPIOx(x)                                                \
+    (x[0]) == 'A' ? RCC_APB2Periph_GPIOA : RCC_APB2Periph_GPIOB
+
+#define GPIOx(x) (x[0]) == 'A' ? GPIOA : GPIOB
+
+#define GPIO_Pinx(x)                                                           \
+    ((x[1]) == '0'   ? GPIO_Pin_0                                              \
+     : (x[2]) == '5' ? GPIO_Pin_15                                             \
+     : (x[2]) == '4' ? GPIO_Pin_14                                             \
+     : (x[2]) == '3' ? GPIO_Pin_13                                             \
+     : (x[2]) == '2' ? GPIO_Pin_12                                             \
+     : (x[2]) == '1' ? GPIO_Pin_11                                             \
+     : (x[2]) == '0' ? GPIO_Pin_10                                             \
+     : (x[1]) == '9' ? GPIO_Pin_9                                              \
+     : (x[1]) == '8' ? GPIO_Pin_8                                              \
+     : (x[1]) == '7' ? GPIO_Pin_7                                              \
+     : (x[1]) == '6' ? GPIO_Pin_6                                              \
+     : (x[1]) == '5' ? GPIO_Pin_5                                              \
+     : (x[1]) == '4' ? GPIO_Pin_4                                              \
+     : (x[1]) == '3' ? GPIO_Pin_3                                              \
+     : (x[1]) == '2' ? GPIO_Pin_2                                              \
+     : (x[1]) == '1' ? GPIO_Pin_1                                              \
+                     : NULL)
+
 typedef struct {
-    uint32_t RCC_APB2Periph;
+    char GPIOxPiny[32];
+    GPIOMode_TypeDef GPIO_Mode;
+
     GPIO_TypeDef *GPIOx;
     uint16_t GPIO_Pin;
-    GPIOMode_TypeDef GPIO_Mode;
 } GPIO;
 
 void GPIO_Init_(GPIO *gpio);

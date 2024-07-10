@@ -71,15 +71,11 @@ int main() {
     RTC_Init();
 
     GPIO TX = {
-        RCC_APB2Periph_GPIOB,
-        GPIOB,
-        GPIO_Pin_10,
+        "B10",
         GPIO_Mode_AF_PP,
     };
     GPIO RX = {
-        RCC_APB2Periph_GPIOB,
-        GPIOB,
-        GPIO_Pin_11,
+        "B11",
         GPIO_Mode_IPU,
     };
     USART usart = {
@@ -106,15 +102,11 @@ int main() {
     INFO("USART interrupt started\r\n");
 
     GPIO SCL = {
-        RCC_APB2Periph_GPIOB,
-        GPIOB,
-        GPIO_Pin_8,
+        "B8",
         GPIO_Mode_Out_PP,
     };
     GPIO SDA = {
-        RCC_APB2Periph_GPIOB,
-        GPIOB,
-        GPIO_Pin_9,
+        "B9",
         GPIO_Mode_Out_PP,
     };
     I2C i2c = {
@@ -150,21 +142,15 @@ int main() {
         TIM_SetCompare4,
     };
     GPIO gpio_pwm_left = {
-        RCC_APB2Periph_GPIOA,
-        GPIOA,
-        GPIO_Pin_11,
+        "A11",
         GPIO_Mode_AF_PP,
     };
     GPIO gpio_direction_left_1 = {
-        RCC_APB2Periph_GPIOB,
-        GPIOB,
-        GPIO_Pin_12,
+        "B12",
         GPIO_Mode_Out_PP,
     };
     GPIO gpio_direction_left_2 = {
-        RCC_APB2Periph_GPIOB,
-        GPIOB,
-        GPIO_Pin_13,
+        "B13",
         GPIO_Mode_Out_PP,
     };
     PWM pwm_left = {
@@ -189,9 +175,7 @@ int main() {
         TIM_SetCompare1,
     };
     GPIO gpio_pwm_right = {
-        RCC_APB2Periph_GPIOA,
-        GPIOA,
-        GPIO_Pin_8,
+        "A8",
         GPIO_Mode_AF_PP,
     };
     PWM pwm_right = {
@@ -201,15 +185,11 @@ int main() {
         DISABLE,
     };
     GPIO gpio_direction_right_1 = {
-        RCC_APB2Periph_GPIOB,
-        GPIOB,
-        GPIO_Pin_14,
+        "B14",
         GPIO_Mode_Out_PP,
     };
     GPIO gpio_direction_right_2 = {
-        RCC_APB2Periph_GPIOB,
-        GPIOB,
-        GPIO_Pin_15,
+        "B15",
         GPIO_Mode_Out_PP,
     };
     motor_right = (Motor){
@@ -222,9 +202,7 @@ int main() {
     INFO("motor_right started\r\n");
 
     GPIO gpio_encoder_left = {
-        RCC_APB2Periph_GPIOA,
-        GPIOA,
-        GPIO_Pin_6 | GPIO_Pin_7,
+        "A6 | A7",
         GPIO_Mode_IPU,
     };
     TIM tim_left = {
@@ -248,9 +226,7 @@ int main() {
     INFO("encoder_left started\r\n");
 
     GPIO gpio_encoder_right = {
-        RCC_APB2Periph_GPIOB,
-        GPIOB,
-        GPIO_Pin_6 | GPIO_Pin_7,
+        "B6 | B7",
         GPIO_Mode_IPU,
     };
     TIM tim_right = {
@@ -494,3 +470,109 @@ void ReceiveHandler(Serial *serial) {
 }
 
 void WatchHandler(Serial *serial) {}
+
+// #include "stm32f10x.h"
+
+// #include <string.h>
+
+// #include "gpio.h"
+// #include "i2c.h"
+// #include "interrupt.h"
+// #include "serial.h"
+// #include "stm32f10x_gpio.h"
+
+// I2C *GlobalI2C;
+// Serial *GlobalSerial;
+
+// void ReceiveHandler(Serial *serial);
+
+// int main() {
+//     RTC_Init();
+
+//     GPIO TX = {
+//         "B10",
+//         GPIO_Mode_AF_PP,
+//     };
+//     GPIO RX = {
+//         "B11",
+//         GPIO_Mode_IPU,
+//     };
+//     USART usart = {
+//         RCC_APB1Periph_USART3,
+//         USART3,
+//         USART_Mode_Tx | USART_Mode_Rx,
+//     };
+//     Serial serial = {
+//         &TX,
+//         &RX,
+//         &usart,
+//     };
+//     GlobalSerial = &serial;
+//     Serial_Init(&serial);
+//     Serial_SendString(
+//         &serial, "\r\n------------------------------------------------\r\n");
+//     INFO("Serial started\r\n");
+
+//     USART_Interrupt interrupt = {
+//         USART3, USART_IT_RXNE, USART3_IRQn, NVIC_PriorityGroup_2, 2, 0,
+//     };
+//     INFO("starting USART interrupt\r\n");
+//     USART_Interrupt_Init(&interrupt);
+//     INFO("USART interrupt started\r\n");
+
+//     INFO("start successfully\r\n");
+
+//     GPIO gpio = {
+//         .GPIOxPiny = "B15 | A0",
+//         .GPIO_Mode = GPIO_Mode_Out_PP,
+//     };
+//     GPIO_Init_(&gpio);
+//     GPIO_WriteBit(gpio.GPIOx, gpio.GPIO_Pin, Bit_SET);
+
+//     for (;;) {
+//     }
+// }
+
+// void USART3_IRQHandler(void) {
+//     if (USART_GetITStatus(USART3, USART_IT_RXNE) == SET) {
+
+//         Serial_Parse(GlobalSerial);
+//         ReceiveHandler(GlobalSerial);
+
+//         USART_ClearITPendingBit(USART3, USART_IT_RXNE);
+//     }
+// }
+
+// void ReceiveHandler(Serial *serial) {
+//     if (serial->RecieveFlag == SET) {
+//         switch (serial->type) {
+//         case Byte:
+//             Serial_SendString(serial, "\r");
+//             INFO("received Byte [%c]\r\n", serial->ByteData);
+
+//             switch (serial->ByteData) {}
+//             break;
+
+//         case HexPack:
+//             break;
+
+//         case StringPack:
+//             INFO("receive command [>%s]\r\n", serial->StringData);
+
+//             char *Head = strtok(serial->StringData, " ");
+//             if (strcmp(Head, "reset") == 0) {
+//                 INFO("call reset succeeeded\r\n");
+//                 NVIC_SystemReset();
+
+//             } else {
+//                 ERROR("unknow command\r\n");
+//             }
+//             break;
+
+//         default:
+//             break;
+//         }
+
+//         Serial_Clear(serial);
+//     }
+// }
