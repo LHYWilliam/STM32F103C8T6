@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 
-#include "gpio.h"
 #include "rtc.h"
 #include "usart.h"
 
@@ -27,8 +26,8 @@ typedef enum {
 } PackType;
 
 typedef struct {
-    GPIO *TX;
-    GPIO *RX;
+    char TX[4];
+    char RX[4];
     USART *usart;
 
     uint8_t count;

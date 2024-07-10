@@ -70,23 +70,15 @@ void WatchHandler(Serial *serial);
 int main() {
     RTC_Init();
 
-    GPIO TX = {
-        "B10",
-        GPIO_Mode_AF_PP,
-    };
-    GPIO RX = {
-        "B11",
-        GPIO_Mode_IPU,
-    };
     USART usart = {
-        RCC_APB1Periph_USART3,
-        USART3,
-        USART_Mode_Tx | USART_Mode_Rx,
+        .RCC_APBPeriph = RCC_APB1Periph_USART3,
+        .USARTx = USART3,
+        .USART_Mode = USART_Mode_Tx | USART_Mode_Rx,
     };
     Serial serial = {
-        &TX,
-        &RX,
-        &usart,
+        .TX = "B10",
+        .RX = "B11",
+        .usart = &usart,
     };
     GlobalSerial = &serial;
     Serial_Init(&serial);
@@ -95,29 +87,34 @@ int main() {
     INFO("Serial started\r\n");
 
     USART_Interrupt interrupt = {
-        USART3, USART_IT_RXNE, USART3_IRQn, NVIC_PriorityGroup_2, 2, 0,
+        .USARTx = USART3,
+        .USART_IT = USART_IT_RXNE,
+        .NVIC_IRQChannel = USART3_IRQn,
+        .NVIC_PriorityGroup = NVIC_PriorityGroup_2,
+        .NVIC_IRQChannelPreemptionPriority = 2,
+        .NVIC_IRQChannelSubPriority = 0,
     };
     INFO("starting USART interrupt\r\n");
     USART_Interrupt_Init(&interrupt);
     INFO("USART interrupt started\r\n");
 
     GPIO SCL = {
-        "B8",
-        GPIO_Mode_Out_PP,
+        .GPIOxPiny = "B8",
+        .GPIO_Mode = GPIO_Mode_Out_PP,
     };
     GPIO SDA = {
-        "B9",
-        GPIO_Mode_Out_PP,
+        .GPIOxPiny = "B9",
+        .GPIO_Mode = GPIO_Mode_Out_PP,
     };
     I2C i2c = {
-        &SCL,
-        &SDA,
-        50000,
+        .SCL = &SCL,
+        .SDA = &SDA,
+        .frequency = 50000,
     };
     GlobalI2C = &i2c;
     mpu = (MPU){
-        &i2c,
-        MPU6050_DEVICE_ADDRESS,
+        .i2c = &i2c,
+        .DeviceAddress = MPU6050_DEVICE_ADDRESS,
     };
     INFO("starting MPU\r\n");
     MPU_Init(&mpu);
@@ -136,18 +133,18 @@ int main() {
     };
     TIM_Init(&tim_pwm, NULL);
     Compare compare_left = {
-        TIM1,
-        0,
-        TIM_OC4Init,
-        TIM_SetCompare4,
+        .TIMx = TIM1,
+        .TIM_Pulse = 0,
+        .TIM_OCInit = TIM_OC4Init,
+        .TIM_SetCompare = TIM_SetCompare4,
     };
     GPIO gpio_pwm_left = {
-        "A11",
-        GPIO_Mode_AF_PP,
+        .GPIOxPiny = "A11",
+        .GPIO_Mode = GPIO_Mode_AF_PP,
     };
     GPIO gpio_direction_left_1 = {
-        "B12",
-        GPIO_Mode_Out_PP,
+        .GPIOxPiny = "B12",
+        .GPIO_Mode = GPIO_Mode_Out_PP,
     };
     GPIO gpio_direction_left_2 = {
         "B13",
@@ -226,8 +223,8 @@ int main() {
     INFO("encoder_left started\r\n");
 
     GPIO gpio_encoder_right = {
-        "B6 | B7",
-        GPIO_Mode_IPU,
+        .GPIOxPiny = "B6 | B7",
+        .GPIO_Mode = GPIO_Mode_IPU,
     };
     TIM tim_right = {
         RCC_APB1Periph_TIM4, TIM4, NULL, 1 - 1, 65536 - 1, UNCMD,
@@ -250,7 +247,13 @@ int main() {
     INFO("encoder_right started\r\n");
 
     stand = (PID){
-        ENABLE, DISABLE, ENABLE, STAND_KP, 0, STAND_KD, ZERO,
+        .KpState = ENABLE,
+        .KiState = DISABLE,
+        .KdState = ENABLE,
+        .Kp = STAND_KP,
+        .Ki = 0,
+        .Kd = STAND_KD,
+        .goal = ZERO,
     };
     PID_Init(&stand);
     speed = (PID){

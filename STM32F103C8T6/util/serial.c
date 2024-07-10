@@ -1,15 +1,25 @@
 #include "stdarg.h"
 #include "stdio.h"
 #include <stdint.h>
+#include <string.h>
 
+#include "gpio.h"
 #include "serial.h"
 
 void Serial_Init(Serial *serial) {
-    if (serial->TX) {
-        GPIO_Init_(serial->TX);
+    if (serial->TX[0]) {
+        GPIO TX = {
+            .GPIO_Mode = GPIO_Mode_AF_PP,
+        };
+        strcpy(TX.GPIOxPiny, serial->TX);
+        GPIO_Init_(&TX);
     }
-    if (serial->RX) {
-        GPIO_Init_(serial->RX);
+    if (serial->RX[0]) {
+        GPIO RX = {
+            .GPIO_Mode = GPIO_Mode_IPU,
+        };
+        strcpy(RX.GPIOxPiny, serial->RX);
+        GPIO_Init_(&RX);
     }
 
     USART_Init_(serial->usart);
