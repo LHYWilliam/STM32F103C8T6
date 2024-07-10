@@ -26,22 +26,28 @@
 #define MPU6050_DEVICE_ADDRESS ((uint8_t)0x68)
 #define OFFESTADAPT_TIMES ((uint8_t)64)
 
-#define ZERO -3.f
+#define ZERO -0.f
 
-#define STAND_KP -300.f
-#define STAND_KD -1.5f
-// #define STAND_KP -450.f
-// #define STAND_KD -1.1f
-
-#define SPEED_KP +300.f
+#define STAND_KP 700.f * 0.6
+#define STAND_KD -3.0f * 0.6
+#define SPEED_KP 250.f
 #define SPEED_KI SPEED_KP / 200
-// #define SPEED_KP +250.f
-// #define SPEED_KI SPEED_KP / 200
+#define TURN_KP 0.f
+#define TURN_KD 0.f
 
-#define TURN_KP +20.f
-#define TURN_KD +1.f
-// #define TURN_KP +25.f
-// #define TURN_KD +1.f
+// #define STAND_KP 800.f * 0.6
+// #define STAND_KD -3.5f * 0.6
+// #define SPEED_KP 300.f
+// #define SPEED_KI SPEED_KP / 200
+// #define TURN_KP 0.f
+// #define TURN_KD 0.f
+
+// #define STAND_KP 640.f * 0.6
+// #define STAND_KD -3.4f * 0.6 - 0.2
+// #define SPEED_KP 375.f
+// #define SPEED_KI SPEED_KP / 200
+// #define TURN_KP 0.f
+// #define TURN_KD 0.f
 
 I2C *GlobalI2C;
 Serial *GlobalSerial;
@@ -347,7 +353,7 @@ void USART3_IRQHandler(void) {
 
 int16_t PID_Stand(PID *pid, float pitch, int16_t ygyro) {
     static float error;
-    error = pid->goal - pitch;
+    error = pitch - pid->goal;
 
     return pid->Kp * error + pid->Kd * ygyro;
 }
@@ -355,7 +361,7 @@ int16_t PID_Stand(PID *pid, float pitch, int16_t ygyro) {
 int16_t PID_Speed(PID *pid, int16_t left, int16_t right) {
     static float error;
     error = left + right - pid->goal;
-    error = pid->last * 0.8 + error * 0.2;
+    error = pid->last * 0.7 + error * 0.3;
 
     pid->sum += error;
     pid->last = error;

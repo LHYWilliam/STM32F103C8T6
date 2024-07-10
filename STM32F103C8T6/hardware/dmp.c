@@ -87,8 +87,8 @@ void DMP_GetData(float *pitch, float *roll, float *yaw) {
     unsigned long sensor_timestamp;
     float q0 = 0.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;
 
-    while (dmp_read_fifo(gyro, accel, quat, &sensor_timestamp, &sensors, &more))
-        ;
+    dmp_read_fifo(gyro, accel, quat, &sensor_timestamp, &sensors, &more);
+
     if (sensors & INV_WXYZ_QUAT) {
         q0 = quat[0] / q30;
         q1 = quat[1] / q30;
