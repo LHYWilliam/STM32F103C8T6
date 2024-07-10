@@ -118,7 +118,12 @@ int main() {
     INFO("DMP started\r\n");
 
     TIM tim_pwm = {
-        RCC_APB2Periph_TIM1, TIM1, TIM_InternalClock, 100 - 1, 7200 - 1, CMD,
+        .RCC_APBxPeriph = RCC_APB2Periph_TIM1,
+        .TIMx = TIM1,
+        .TIM_ClockSource = TIM_InternalClock,
+        .TIM_Prescaler = 100 - 1,
+        .TIM_Period = 7200 - 1,
+        .CMD_Mode = CMD,
     };
     TIM_Init(&tim_pwm, NULL);
     Compare compare_left = {
@@ -136,76 +141,92 @@ int main() {
         .GPIO_Mode = GPIO_Mode_Out_PP,
     };
     GPIO gpio_direction_left_2 = {
-        "B13",
-        GPIO_Mode_Out_PP,
+        .GPIOxPiny = "B13",
+        .GPIO_Mode = GPIO_Mode_Out_PP,
     };
     PWM pwm_left = {
-        &tim_pwm,
-        &compare_left,
-        &gpio_pwm_left,
-        DISABLE,
+        .tim = &tim_pwm,
+        .compare = &compare_left,
+        .gpio = &gpio_pwm_left,
+        .Init_Mode = DISABLE,
     };
     motor_left = (Motor){
-        &pwm_left,
-        &gpio_direction_left_1,
-        &gpio_direction_left_2,
+        .pwm = &pwm_left,
+        .gpio_direction1 = &gpio_direction_left_1,
+        .gpio_direction2 = &gpio_direction_left_2,
     };
     INFO("motor_left DMP\r\n");
     Motor_Init(&motor_left);
     INFO("motor_left started\r\n");
 
     Compare compare_right = {
-        TIM1,
-        0,
-        TIM_OC1Init,
-        TIM_SetCompare1,
+        .TIMx = TIM1,
+        .TIM_Pulse = 0,
+        .TIM_OCInit = TIM_OC1Init,
+        .TIM_SetCompare = TIM_SetCompare1,
     };
     GPIO gpio_pwm_right = {
-        "A8",
-        GPIO_Mode_AF_PP,
+        .GPIOxPiny = "A8",
+        .GPIO_Mode = GPIO_Mode_AF_PP,
     };
     PWM pwm_right = {
-        &tim_pwm,
-        &compare_right,
-        &gpio_pwm_right,
-        DISABLE,
+        .tim = &tim_pwm,
+        .compare = &compare_right,
+        .gpio = &gpio_pwm_right,
+        .Init_Mode = DISABLE,
     };
     GPIO gpio_direction_right_1 = {
-        "B14",
-        GPIO_Mode_Out_PP,
+        .GPIOxPiny = "B14",
+        .GPIO_Mode = GPIO_Mode_Out_PP,
     };
     GPIO gpio_direction_right_2 = {
-        "B15",
-        GPIO_Mode_Out_PP,
+        .GPIOxPiny = "B15",
+        .GPIO_Mode = GPIO_Mode_Out_PP,
     };
     motor_right = (Motor){
-        &pwm_right,
-        &gpio_direction_right_1,
-        &gpio_direction_right_2,
+        .pwm = &pwm_right,
+        .gpio_direction1 = &gpio_direction_right_1,
+        .gpio_direction2 = &gpio_direction_right_2,
     };
     INFO("motor_right DMP\r\n");
     Motor_Init(&motor_right);
     INFO("motor_right started\r\n");
 
     GPIO gpio_encoder_left = {
-        "A6 | A7",
-        GPIO_Mode_IPU,
+        .GPIOxPiny = "A6 | A7",
+        .GPIO_Mode = GPIO_Mode_IPU,
     };
     TIM tim_left = {
-        RCC_APB1Periph_TIM3, TIM3, NULL, 1 - 1, 65536 - 1, UNCMD,
+        .RCC_APBxPeriph = RCC_APB1Periph_TIM3,
+        .TIMx = TIM3,
+        .TIM_ClockSource = NULL,
+        .TIM_Prescaler = 1 - 1,
+        .TIM_Period = 65536 - 1,
+        .CMD_Mode = UNCMD,
     };
     Capture capture_left1 = {
-        TIM3, TIM_Channel_1,   TIM_ICPolarity_Rising, TIM_ICSelection_DirectTI,
-        0xF,  TIM_GetCapture1,
+        .TIMx = TIM3,
+        .TIM_Channel = TIM_Channel_1,
+        .TIM_ICPolarity = TIM_ICPolarity_Rising,
+        .TIM_ICSelection = TIM_ICSelection_DirectTI,
+        .TIM_ICFilter = 0xF,
+        .TIM_GetCapture = TIM_GetCapture1,
     };
     Capture capture_left2 = {
-        TIM3, TIM_Channel_2,   TIM_ICPolarity_Rising, TIM_ICSelection_DirectTI,
-        0xF,  TIM_GetCapture2,
+        .TIMx = TIM3,
+        .TIM_Channel = TIM_Channel_2,
+        .TIM_ICPolarity = TIM_ICPolarity_Rising,
+        .TIM_ICSelection = TIM_ICSelection_DirectTI,
+        .TIM_ICFilter = 0xF,
+        .TIM_GetCapture = TIM_GetCapture2,
     };
     encoder_left = (Encoder){
-        &gpio_encoder_left,    &tim_left,
-        &capture_left1,        &capture_left2,
-        TIM_ICPolarity_Rising, TIM_ICPolarity_Falling,
+        .gpio = &gpio_encoder_left,
+        .tim = &tim_left,
+        .capture1 = &capture_left1,
+        .capture2 = &capture_left2,
+        .TIM_IC1Polarity = TIM_ICPolarity_Rising,
+        .TIM_IC2Polarity = TIM_ICPolarity_Falling,
     };
     INFO("starting encoder_left\r\n");
     Encoder_Init(&encoder_left);
@@ -216,20 +237,36 @@ int main() {
         .GPIO_Mode = GPIO_Mode_IPU,
     };
     TIM tim_right = {
-        RCC_APB1Periph_TIM4, TIM4, NULL, 1 - 1, 65536 - 1, UNCMD,
+        .RCC_APBxPeriph = RCC_APB1Periph_TIM4,
+        .TIMx = TIM4,
+        .TIM_ClockSource = NULL,
+        .TIM_Prescaler = 1 - 1,
+        .TIM_Period = 65536 - 1,
+        .CMD_Mode = UNCMD,
     };
     Capture capture_right1 = {
-        TIM4, TIM_Channel_1,   TIM_ICPolarity_Rising, TIM_ICSelection_DirectTI,
-        0xF,  TIM_GetCapture1,
+        .TIMx = TIM4,
+        .TIM_Channel = TIM_Channel_1,
+        .TIM_ICPolarity = TIM_ICPolarity_Rising,
+        .TIM_ICSelection = TIM_ICSelection_DirectTI,
+        .TIM_ICFilter = 0xF,
+        .TIM_GetCapture = TIM_GetCapture1,
     };
     Capture capture_right2 = {
-        TIM4, TIM_Channel_2,   TIM_ICPolarity_Rising, TIM_ICSelection_DirectTI,
-        0xF,  TIM_GetCapture2,
+        .TIMx = TIM4,
+        .TIM_Channel = TIM_Channel_2,
+        .TIM_ICPolarity = TIM_ICPolarity_Rising,
+        .TIM_ICSelection = TIM_ICSelection_DirectTI,
+        .TIM_ICFilter = 0xF,
+        .TIM_GetCapture = TIM_GetCapture2,
     };
     encoder_right = (Encoder){
-        &gpio_encoder_right,   &tim_right,
-        &capture_right1,       &capture_right2,
-        TIM_ICPolarity_Rising, TIM_ICPolarity_Rising,
+        .gpio = &gpio_encoder_right,
+        .tim = &tim_right,
+        .capture1 = &capture_right1,
+        .capture2 = &capture_right2,
+        .TIM_IC1Polarity = TIM_ICPolarity_Rising,
+        .TIM_IC2Polarity = TIM_ICPolarity_Rising,
     };
     INFO("starting encoder_right\r\n");
     Encoder_Init(&encoder_right);
@@ -246,23 +283,44 @@ int main() {
     };
     PID_Init(&stand);
     speed = (PID){
-        ENABLE, ENABLE, DISABLE, SPEED_KP, SPEED_KI, 0, 0,
+        .KpState = ENABLE,
+        .KiState = ENABLE,
+        .KdState = DISABLE,
+        .Kp = SPEED_KP,
+        .Ki = SPEED_KI,
+        .Kd = 0,
+        .goal = 0,
     };
     PID_Init(&speed);
     turn = (PID){
-        ENABLE, DISABLE, ENABLE, TURN_KP, 0, TURN_KD, 0,
+        .KpState = ENABLE,
+        .KiState = DISABLE,
+        .KdState = ENABLE,
+        .Kp = TURN_KP,
+        .Ki = 0,
+        .Kd = TURN_KD,
+        .goal = 0,
     };
     PID_Init(&turn);
 
     TIM tim2 = {
-        RCC_APB1Periph_TIM2, TIM2, TIM_InternalClock, 7200 - 1, 50 - 1, UNCMD,
+        .RCC_APBxPeriph = RCC_APB1Periph_TIM2,
+        .TIMx = TIM2,
+        .TIM_ClockSource = TIM_InternalClock,
+        .TIM_Prescaler = 7200 - 1,
+        .TIM_Period = 50 - 1,
+        .CMD_Mode = UNCMD,
     };
     INFO("starting TIM2\r\n");
     TIM_Init(&tim2, NULL);
     INFO("TIM2 started\r\n");
 
     TIM_Interrupt TIM_interrupt = {
-        TIM2, TIM2_IRQn, NVIC_PriorityGroup_2, 0, 2,
+        .TIMx = TIM2,
+        .NVIC_IRQChannel = TIM2_IRQn,
+        .NVIC_PriorityGroup = NVIC_PriorityGroup_2,
+        .NVIC_IRQChannelPreemptionPriority = 0,
+        .NVIC_IRQChannelSubPriority = 2,
     };
     INFO("starting TIM_Interrupt\r\n");
     TIM_Interrupt_Init(&TIM_interrupt);
