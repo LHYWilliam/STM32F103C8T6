@@ -2,11 +2,10 @@
 #define __ENCODER_H
 
 #include "capture.h"
-#include "gpio.h"
 #include "tim.h"
 
 typedef struct {
-    GPIO *gpio;
+    char gpio[12];
     TIM *tim;
     Capture *capture1;
     Capture *capture2;

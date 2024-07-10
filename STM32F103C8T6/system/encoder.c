@@ -1,7 +1,9 @@
+#include "stm32f10x_gpio.h"
 #include "stm32f10x_tim.h"
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "capture.h"
 #include "encoder.h"
@@ -9,7 +11,12 @@
 #include "tim.h"
 
 void Encoder_Init(Encoder *encoder) {
-    GPIO_Init_(encoder->gpio);
+    GPIO gpio = {
+        .GPIO_Mode = GPIO_Mode_IPU,
+    };
+    strcpy(gpio.GPIOxPiny, encoder->gpio);
+    GPIO_Init_(&gpio);
+
     TIM_Init(encoder->tim, NULL);
     Capture_Init(encoder->capture1);
     Capture_Init(encoder->capture2);

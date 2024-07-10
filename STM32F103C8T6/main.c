@@ -168,10 +168,6 @@ int main() {
     Motor_Init(&motor_right);
     INFO("motor_right started\r\n");
 
-    GPIO gpio_encoder_left = {
-        .GPIOxPiny = "A6 | A7",
-        .GPIO_Mode = GPIO_Mode_IPU,
-    };
     TIM tim_left = {
         .RCC_APBxPeriph = RCC_APB1Periph_TIM3,
         .TIMx = TIM3,
@@ -197,7 +193,7 @@ int main() {
         .TIM_GetCapture = TIM_GetCapture2,
     };
     encoder_left = (Encoder){
-        .gpio = &gpio_encoder_left,
+        .gpio = "A6 | A7",
         .tim = &tim_left,
         .capture1 = &capture_left1,
         .capture2 = &capture_left2,
@@ -208,10 +204,6 @@ int main() {
     Encoder_Init(&encoder_left);
     INFO("encoder_left started\r\n");
 
-    GPIO gpio_encoder_right = {
-        .GPIOxPiny = "B6 | B7",
-        .GPIO_Mode = GPIO_Mode_IPU,
-    };
     TIM tim_right = {
         .RCC_APBxPeriph = RCC_APB1Periph_TIM4,
         .TIMx = TIM4,
@@ -237,7 +229,7 @@ int main() {
         .TIM_GetCapture = TIM_GetCapture2,
     };
     encoder_right = (Encoder){
-        .gpio = &gpio_encoder_right,
+        .gpio = "B6 | B7",
         .tim = &tim_right,
         .capture1 = &capture_right1,
         .capture2 = &capture_right2,
