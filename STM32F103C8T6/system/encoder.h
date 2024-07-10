@@ -1,14 +1,19 @@
 #ifndef __ENCODER_H
 #define __ENCODER_H
 
-#include "capture.h"
-#include "tim.h"
+#include "stm32f10x.h"
+
+#define RCC_APBxPeriph_TIMx(x)                                                 \
+    ((x) == TIM1   ? RCC_APB2Periph_TIM1                                       \
+     : (x) == TIM2 ? RCC_APB1Periph_TIM2                                       \
+     : (x) == TIM3 ? RCC_APB1Periph_TIM3                                       \
+     : (x) == TIM4 ? RCC_APB1Periph_TIM4                                       \
+                   : NULL)
 
 typedef struct {
     char gpio[12];
-    TIM *tim;
-    Capture *capture1;
-    Capture *capture2;
+
+    TIM_TypeDef *TIMx;
     uint16_t TIM_IC1Polarity;
     uint16_t TIM_IC2Polarity;
 } Encoder;

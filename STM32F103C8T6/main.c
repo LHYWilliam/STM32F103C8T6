@@ -1,5 +1,4 @@
 #include "stm32f10x.h"
-#include "stm32f10x_gpio.h"
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_tim.h"
 #include "stm32f10x_usart.h"
@@ -11,7 +10,6 @@
 
 #include "dmp.h"
 #include "encoder.h"
-#include "gpio.h"
 #include "i2c.h"
 #include "interrupt.h"
 #include "motor.h"
@@ -48,12 +46,39 @@
 // #define TURN_KP 0.f
 // #define TURN_KD 0.f
 
-I2C *GlobalI2C;
-Serial *GlobalSerial;
+Serial serial = {
+    .TX = "B10",
+    .RX = "B11",
+    .USARTx = USART3,
+};
 
-MPU mpu;
+I2C i2c = {
+    .SCL = "B8",
+    .SDA = "B9",
+};
+
+MPU mpu = {
+    .DeviceAddress = MPU6050_DEVICE_ADDRESS,
+};
+
+Encoder encoder_left = {
+    .gpio = "A6 | A7",
+    .TIMx = TIM3,
+    .TIM_IC1Polarity = TIM_ICPolarity_Rising,
+    .TIM_IC2Polarity = TIM_ICPolarity_Falling,
+};
+
+Encoder encoder_right = {
+    .gpio = "B6 | B7",
+    .TIMx = TIM4,
+    .TIM_IC1Polarity = TIM_ICPolarity_Rising,
+    .TIM_IC2Polarity = TIM_ICPolarity_Rising,
+};
+
+I2C *GlobalI2C = &i2c;
+Serial *GlobalSerial = &serial;
+
 Motor motor_left, motor_right;
-Encoder encoder_left, encoder_right;
 PID stand, speed, turn;
 
 int16_t xacc_offset, yacc_offset, xgyro_offset, ygyro_offset, zgyro_offset;
@@ -69,41 +94,15 @@ void WatchHandler(Serial *serial);
 int main() {
     RTC_Init();
 
-    Serial serial = {
-        .TX = "B10",
-        .RX = "B11",
-        .USARTx = USART3,
-    };
-    GlobalSerial = &serial;
     Serial_Init(&serial);
     Serial_SendString(
         &serial, "\r\n------------------------------------------------\r\n");
     INFO("Serial started\r\n");
 
-    USART_Interrupt interrupt = {
-        .USARTx = USART3,
-        .USART_IT = USART_IT_RXNE,
-        .NVIC_IRQChannel = USART3_IRQn,
-        .NVIC_PriorityGroup = NVIC_PriorityGroup_2,
-        .NVIC_IRQChannelPreemptionPriority = 2,
-        .NVIC_IRQChannelSubPriority = 0,
-    };
-    INFO("starting USART interrupt\r\n");
-    USART_Interrupt_Init(&interrupt);
-    INFO("USART interrupt started\r\n");
-
-    I2C i2c = {
-        .SCL = "B8",
-        .SDA = "B9",
-    };
-    GlobalI2C = &i2c;
     INFO("starting I2C\r\n");
     I2C_Init_(&i2c);
     INFO("I2C started\r\n");
 
-    mpu = (MPU){
-        .DeviceAddress = MPU6050_DEVICE_ADDRESS,
-    };
     INFO("starting MPU\r\n");
     MPU_Init(&mpu);
     INFO("MPU started\r\n");
@@ -168,74 +167,10 @@ int main() {
     Motor_Init(&motor_right);
     INFO("motor_right started\r\n");
 
-    TIM tim_left = {
-        .RCC_APBxPeriph = RCC_APB1Periph_TIM3,
-        .TIMx = TIM3,
-        .TIM_ClockSource = NULL,
-        .TIM_Prescaler = 1 - 1,
-        .TIM_Period = 65536 - 1,
-        .CMD_Mode = UNCMD,
-    };
-    Capture capture_left1 = {
-        .TIMx = TIM3,
-        .TIM_Channel = TIM_Channel_1,
-        .TIM_ICPolarity = TIM_ICPolarity_Rising,
-        .TIM_ICSelection = TIM_ICSelection_DirectTI,
-        .TIM_ICFilter = 0xF,
-        .TIM_GetCapture = TIM_GetCapture1,
-    };
-    Capture capture_left2 = {
-        .TIMx = TIM3,
-        .TIM_Channel = TIM_Channel_2,
-        .TIM_ICPolarity = TIM_ICPolarity_Rising,
-        .TIM_ICSelection = TIM_ICSelection_DirectTI,
-        .TIM_ICFilter = 0xF,
-        .TIM_GetCapture = TIM_GetCapture2,
-    };
-    encoder_left = (Encoder){
-        .gpio = "A6 | A7",
-        .tim = &tim_left,
-        .capture1 = &capture_left1,
-        .capture2 = &capture_left2,
-        .TIM_IC1Polarity = TIM_ICPolarity_Rising,
-        .TIM_IC2Polarity = TIM_ICPolarity_Falling,
-    };
     INFO("starting encoder_left\r\n");
     Encoder_Init(&encoder_left);
     INFO("encoder_left started\r\n");
 
-    TIM tim_right = {
-        .RCC_APBxPeriph = RCC_APB1Periph_TIM4,
-        .TIMx = TIM4,
-        .TIM_ClockSource = NULL,
-        .TIM_Prescaler = 1 - 1,
-        .TIM_Period = 65536 - 1,
-        .CMD_Mode = UNCMD,
-    };
-    Capture capture_right1 = {
-        .TIMx = TIM4,
-        .TIM_Channel = TIM_Channel_1,
-        .TIM_ICPolarity = TIM_ICPolarity_Rising,
-        .TIM_ICSelection = TIM_ICSelection_DirectTI,
-        .TIM_ICFilter = 0xF,
-        .TIM_GetCapture = TIM_GetCapture1,
-    };
-    Capture capture_right2 = {
-        .TIMx = TIM4,
-        .TIM_Channel = TIM_Channel_2,
-        .TIM_ICPolarity = TIM_ICPolarity_Rising,
-        .TIM_ICSelection = TIM_ICSelection_DirectTI,
-        .TIM_ICFilter = 0xF,
-        .TIM_GetCapture = TIM_GetCapture2,
-    };
-    encoder_right = (Encoder){
-        .gpio = "B6 | B7",
-        .tim = &tim_right,
-        .capture1 = &capture_right1,
-        .capture2 = &capture_right2,
-        .TIM_IC1Polarity = TIM_ICPolarity_Rising,
-        .TIM_IC2Polarity = TIM_ICPolarity_Rising,
-    };
     INFO("starting encoder_right\r\n");
     Encoder_Init(&encoder_right);
     INFO("encoder_right started\r\n");
@@ -293,6 +228,18 @@ int main() {
     INFO("starting TIM_Interrupt\r\n");
     TIM_Interrupt_Init(&TIM_interrupt);
     INFO("TIM_Interrupt started\r\n");
+
+    USART_Interrupt interrupt = {
+        .USARTx = USART3,
+        .USART_IT = USART_IT_RXNE,
+        .NVIC_IRQChannel = USART3_IRQn,
+        .NVIC_PriorityGroup = NVIC_PriorityGroup_2,
+        .NVIC_IRQChannelPreemptionPriority = 2,
+        .NVIC_IRQChannelSubPriority = 0,
+    };
+    INFO("starting USART interrupt\r\n");
+    USART_Interrupt_Init(&interrupt);
+    INFO("USART interrupt started\r\n");
 
     INFO("started successfully\r\n");
 
