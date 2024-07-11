@@ -28,6 +28,9 @@
 #define TURN_KP 0.f
 #define TURN_KD 0.f
 
+float speedGoal = 0.;
+float turnGoal = 0.;
+
 // #define STAND_KP 800.f * 0.6
 // #define STAND_KD -3.5f * 0.6
 // #define SPEED_KP 300.f
@@ -92,19 +95,16 @@ Encoder encoder_right = {
 PID stand = {
     .Kp = STAND_KP,
     .Kd = STAND_KD,
-    .goal = ZERO,
 };
 
 PID speed = {
     .Kp = SPEED_KP,
     .Ki = SPEED_KI,
-    .goal = 0,
 };
 
 PID turn = {
     .Kp = TURN_KP,
     .Kd = TURN_KD,
-    .goal = 0,
 };
 
 Timer timer = {
@@ -222,27 +222,24 @@ void USART3_IRQHandler(void) {
 }
 
 int16_t PID_Stand(PID *pid, float pitch, int16_t ygyro) {
-    static float error;
-    error = pitch - pid->goal;
-
-    return pid->Kp * error + pid->Kd * ygyro;
+    return pid->Kp * pitch + pid->Kd * ygyro;
 }
 
 int16_t PID_Speed(PID *pid, int16_t left, int16_t right) {
     static float error;
-    error = left + right - pid->goal;
-    error = pid->last * 0.7 + error * 0.3;
+    error = left + right - speedGoal;
+    error = pid->last_error * 0.7 + error * 0.3;
 
-    pid->sum += error;
-    pid->last = error;
+    pid->integrator += error;
+    pid->last_error = error;
 
-    LIMIT(pid->sum, -7200, 7200);
+    LIMIT(pid->integrator, -7200, 7200);
 
-    return pid->Kp * error + pid->Ki * pid->sum;
+    return pid->Kp * error + pid->Ki * pid->integrator;
 }
 
 int16_t PID_Turn(PID *pid, int16_t zgyro) {
-    return pid->goal == 0. ? pid->Kd * zgyro : pid->Kp * pid->goal;
+    return turnGoal == 0. ? pid->Kd * zgyro : pid->Kp * turnGoal;
 }
 
 void ReceiveHandler(Serial *serial) {
@@ -258,19 +255,19 @@ void ReceiveHandler(Serial *serial) {
                 break;
 
             case 0x57:
-                speed.goal = speed.goal < 0 ? 0 : speed.goal + 10;
+                speedGoal = speedGoal < 0 ? 0 : speedGoal + 10;
                 break;
 
             case 0x53:
-                speed.goal = speed.goal > 0 ? 0 : speed.goal - 10;
+                speedGoal = speedGoal > 0 ? 0 : speedGoal - 10;
                 break;
 
             case 0x41:
-                turn.goal = turn.goal > 0 ? 0 : turn.goal - 10;
+                turnGoal = turnGoal > 0 ? 0 : turnGoal - 10;
                 break;
 
             case 0x44:
-                turn.goal = turn.goal < 0 ? 0 : turn.goal + 10;
+                turnGoal = turnGoal < 0 ? 0 : turnGoal + 10;
                 break;
             }
             break;
@@ -285,18 +282,14 @@ void ReceiveHandler(Serial *serial) {
             if (strcmp(Head, "set") == 0) {
                 char *Body = strtok(NULL, " ");
 
-                if (strcmp(Body, "zero") == 0) {
+                if (strcmp(Body, "speed") == 0) {
                     char *input = strtok(NULL, " ");
-                    sscanf(input, "%f", &stand.goal);
-                    INFO("successfully set %s to %f\r\n", Body, stand.goal);
-                } else if (strcmp(Body, "speed") == 0) {
-                    char *input = strtok(NULL, " ");
-                    sscanf(input, "%f", &speed.goal);
-                    INFO("successfully set %s to %f\r\n", Body, speed.goal);
+                    sscanf(input, "%f", &speedGoal);
+                    INFO("successfully set %s to %f\r\n", Body, speedGoal);
                 } else if (strcmp(Body, "turn") == 0) {
                     char *input = strtok(NULL, " ");
-                    sscanf(input, "%f", &turn.goal);
-                    INFO("successfully set %s to %f\r\n", Body, turn.goal);
+                    sscanf(input, "%f", &turnGoal);
+                    INFO("successfully set %s to %f\r\n", Body, turnGoal);
                 } else if (strcmp(Body, "standkp") == 0) {
                     char *input = strtok(NULL, " ");
                     sscanf(input, "%f", &stand.Kp);
@@ -327,9 +320,7 @@ void ReceiveHandler(Serial *serial) {
             } else if (strcmp(Head, "show") == 0) {
                 char *Body = strtok(NULL, " ");
 
-                if (strcmp(Body, "zero") == 0) {
-                    INFO("%s: %f\r\n", Body, stand.goal);
-                } else if (strcmp(Body, "standkp") == 0) {
+                if (strcmp(Body, "standkp") == 0) {
                     INFO("%s: %f\r\n", Body, stand.Kp);
                 } else if (strcmp(Body, "standkd") == 0) {
                     INFO("%s: %f\r\n", Body, stand.Kd);

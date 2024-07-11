@@ -10,23 +10,20 @@
     } while (0)
 
 typedef struct {
-    uint8_t KpState;
-    uint8_t KiState;
-    uint8_t KdState;
-
     float Kp;
     float Ki;
     float Kd;
+    uint8_t imax;
 
-    float goal;
+    float last_error, integrator;
+    float last_derivative;
+    uint32_t last_time;
 
-    float last;
-    float sum;
+    float output;
 } PID;
 
 void PID_Init(PID *pid);
 
-void PID_SetGoal(PID *pid, float goal);
-int32_t PID_Caculate(PID *pid, float actual);
+int16_t PID_Caculate(PID *pid, float error);
 
 #endif
