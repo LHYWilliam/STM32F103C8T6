@@ -13,7 +13,7 @@ typedef struct {
     float Kp;
     float Ki;
     float Kd;
-    uint8_t imax;
+    uint16_t imax;
 
     float last_error, integrator;
     float last_derivative;

@@ -19,15 +19,6 @@
 
 #define MPU6050_DEVICE_ADDRESS ((uint8_t)0x68)
 
-#define ZERO -0.f
-
-#define STAND_KP 700.f * 0.6
-#define STAND_KD -3.0f * 0.6
-#define SPEED_KP 250.f
-#define SPEED_KI SPEED_KP / 200
-#define TURN_KP 0.f
-#define TURN_KD 0.f
-
 float speedGoal = 0.;
 float turnGoal = 0.;
 
@@ -93,18 +84,18 @@ Encoder encoder_right = {
 };
 
 PID stand = {
-    .Kp = STAND_KP,
-    .Kd = STAND_KD,
+    .Kp = 700. * 0.6,
+    .Kd = -3. * 0.6,
 };
 
 PID speed = {
-    .Kp = SPEED_KP,
-    .Ki = SPEED_KI,
+    .Kp = 250.,
+    .Ki = 250. / 200,
 };
 
 PID turn = {
-    .Kp = TURN_KP,
-    .Kd = TURN_KD,
+    .Kp = 0.,
+    .Kd = 0.,
 };
 
 Timer timer = {
