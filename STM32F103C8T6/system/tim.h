@@ -6,6 +6,13 @@
 #define UNCMD ((uint8_t)0)
 #define CMD ((uint8_t)1)
 
+#define RCC_APBxPeriph_TIMx(x)                                                 \
+    ((x) == TIM1   ? RCC_APB2Periph_TIM1                                       \
+     : (x) == TIM2 ? RCC_APB1Periph_TIM2                                       \
+     : (x) == TIM3 ? RCC_APB1Periph_TIM3                                       \
+     : (x) == TIM4 ? RCC_APB1Periph_TIM4                                       \
+                   : NULL)
+
 typedef struct {
     uint16_t TIM_ExtTRGPrescaler;
     uint16_t TIM_ExtTRGPolarity;

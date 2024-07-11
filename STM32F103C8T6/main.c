@@ -15,7 +15,6 @@
 #include "motor.h"
 #include "mpu.h"
 #include "pid.h"
-#include "pwm.h"
 #include "rtc.h"
 #include "serial.h"
 #include "tim.h"
@@ -61,6 +60,24 @@ MPU mpu = {
     .DeviceAddress = MPU6050_DEVICE_ADDRESS,
 };
 
+Motor motor_left = {
+    .pwm = "A11",
+    .direction1 = "B12",
+    .direction2 = "B13",
+    .TIMx = TIM1,
+    .channel = 4,
+    .TIM_Init_Mode = ENABLE,
+};
+
+Motor motor_right = {
+    .pwm = "A8",
+    .direction1 = "B14",
+    .direction2 = "B15",
+    .TIMx = TIM1,
+    .channel = 1,
+    .TIM_Init_Mode = DISABLE,
+};
+
 Encoder encoder_left = {
     .gpio = "A6 | A7",
     .TIMx = TIM3,
@@ -78,10 +95,7 @@ Encoder encoder_right = {
 I2C *GlobalI2C = &i2c;
 Serial *GlobalSerial = &serial;
 
-Motor motor_left, motor_right;
 PID stand, speed, turn;
-
-int16_t xacc_offset, yacc_offset, xgyro_offset, ygyro_offset, zgyro_offset;
 
 int16_t PID_Stand(PID *pid, float pitch, int16_t ygyro);
 int16_t PID_Speed(PID *pid, int16_t left, int16_t right);
@@ -107,62 +121,14 @@ int main() {
     MPU_Init(&mpu);
     INFO("MPU started\r\n");
 
-    INFO("MPU adapting offset\r\n");
-    MPU_AdaptOffset(&mpu, OFFESTADAPT_TIMES, &xacc_offset, &yacc_offset,
-                    &xgyro_offset, &ygyro_offset, &zgyro_offset);
-    INFO("MPU adapting offset succeeded\r\n");
-
     INFO("starting DMP\r\n");
     DMP_Init();
     INFO("DMP started\r\n");
 
-    TIM tim_pwm = {
-        .RCC_APBxPeriph = RCC_APB2Periph_TIM1,
-        .TIMx = TIM1,
-        .TIM_ClockSource = TIM_InternalClock,
-        .TIM_Prescaler = 100 - 1,
-        .TIM_Period = 7200 - 1,
-        .CMD_Mode = CMD,
-    };
-    TIM_Init(&tim_pwm, NULL);
-    Compare compare_left = {
-        .TIMx = TIM1,
-        .TIM_Pulse = 0,
-        .TIM_OCInit = TIM_OC4Init,
-        .TIM_SetCompare = TIM_SetCompare4,
-    };
-    PWM pwm_left = {
-        .tim = &tim_pwm,
-        .compare = &compare_left,
-        .gpio = "A11",
-        .Init_Mode = DISABLE,
-    };
-    motor_left = (Motor){
-        .pwm = &pwm_left,
-        .direction1 = "B12",
-        .direction2 = "B13",
-    };
     INFO("motor_left DMP\r\n");
     Motor_Init(&motor_left);
     INFO("motor_left started\r\n");
 
-    Compare compare_right = {
-        .TIMx = TIM1,
-        .TIM_Pulse = 0,
-        .TIM_OCInit = TIM_OC1Init,
-        .TIM_SetCompare = TIM_SetCompare1,
-    };
-    PWM pwm_right = {
-        .tim = &tim_pwm,
-        .compare = &compare_right,
-        .gpio = "A8",
-        .Init_Mode = DISABLE,
-    };
-    motor_right = (Motor){
-        .pwm = &pwm_right,
-        .direction1 = "B14",
-        .direction2 = "B15",
-    };
     INFO("motor_right DMP\r\n");
     Motor_Init(&motor_right);
     INFO("motor_right started\r\n");
@@ -266,9 +232,9 @@ void TIM2_IRQHandler(void) {
         speed_left = Encoder_Get(&encoder_left);
         speed_right = Encoder_Get(&encoder_right);
 
-        stand_pulse = PID_Stand(&stand, pitch, ygyro - ygyro_offset);
+        stand_pulse = PID_Stand(&stand, pitch, ygyro);
         speed_pulse = PID_Speed(&speed, speed_left, speed_right);
-        turn_pulse = PID_Turn(&turn, zgyro - zgyro_offset);
+        turn_pulse = PID_Turn(&turn, zgyro);
 
         left_pulse = stand_pulse + speed_pulse + turn_pulse;
         right_pulse = stand_pulse + speed_pulse - turn_pulse;
