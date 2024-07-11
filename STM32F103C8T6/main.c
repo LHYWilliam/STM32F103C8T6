@@ -337,7 +337,7 @@ void ReceiveHandler(Serial *serial) {
                     INFO("%s: %f\r\n", Body, speed.Kp);
                 } else if (strcmp(Body, "turnkp") == 0) {
                     INFO("%s: %f\r\n", Body, turn.Kp);
-                } else if (strcmp(Body, "turnkp") == 0) {
+                } else if (strcmp(Body, "turnkd") == 0) {
                     INFO("%s: %f\r\n", Body, turn.Kd);
                 } else {
                     ERROR("unknow command\r\n");
