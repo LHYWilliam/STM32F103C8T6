@@ -48,8 +48,9 @@ void Encoder_Init(Encoder *encoder) {
     Capture_Init(&capture2);
 
     TIM_EncoderInterfaceConfig(encoder->TIMx, TIM_EncoderMode_TI12,
-                               encoder->TIM_IC1Polarity,
-                               encoder->TIM_IC2Polarity);
+                               encoder->invert ? TIM_ICPolarity_Falling
+                                               : TIM_ICPolarity_Rising,
+                               TIM_ICPolarity_Rising);
 
     TIM_Cmd(encoder->TIMx, ENABLE);
     TIM_ClearFlag(encoder->TIMx, TIM_FLAG_Update);

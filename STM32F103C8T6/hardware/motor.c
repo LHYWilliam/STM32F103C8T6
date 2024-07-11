@@ -9,28 +9,28 @@
 #include "tim.h"
 
 void Motor_Init(Motor *motor) {
-    GPIO pwm = {
+    GPIO PWM = {
         .GPIO_Mode = GPIO_Mode_AF_PP,
     };
-    strcpy(pwm.GPIOxPiny, motor->pwm);
-    GPIO_Init_(&pwm);
+    strcpy(PWM.GPIOxPiny, motor->PWM);
+    GPIO_Init_(&PWM);
 
-    GPIO direction1 = {
+    GPIO IN1 = {
         .GPIO_Mode = GPIO_Mode_Out_PP,
     };
-    strcpy(direction1.GPIOxPiny, motor->direction1);
-    GPIO_Init_(&direction1);
+    strcpy(IN1.GPIOxPiny, motor->IN1);
+    GPIO_Init_(&IN1);
 
-    GPIO direction2 = {
+    GPIO IN2 = {
         .GPIO_Mode = GPIO_Mode_Out_PP,
     };
-    strcpy(direction2.GPIOxPiny, motor->direction2);
-    GPIO_Init_(&direction2);
+    strcpy(IN2.GPIOxPiny, motor->IN2);
+    GPIO_Init_(&IN2);
 
-    motor->direction1_GPIOx = direction1.GPIOx;
-    motor->direction1_GPIO_Pin = direction1.GPIO_Pin;
-    motor->direction2_GPIOx = direction2.GPIOx;
-    motor->direction2_GPIO_Pin = direction2.GPIO_Pin;
+    motor->IN1_GPIOx = IN1.GPIOx;
+    motor->IN1_GPIO_Pin = IN1.GPIO_Pin;
+    motor->IN2_GPIOx = IN2.GPIOx;
+    motor->IN2_GPIO_Pin = IN2.GPIO_Pin;
 
     if (motor->TIM_Init_Mode) {
         TIM tim = {
@@ -53,11 +53,13 @@ void Motor_Init(Motor *motor) {
     Compare_Init(&compare);
 
     motor->TIM_SetCompare = compare.TIM_SetCompare;
+
+    motor->set_Mode = motor->invert ? Bit_SET : Bit_RESET;
 }
 void Motor_Set(Motor *motor, int16_t speed) {
-    GPIO_WriteBit(motor->direction1_GPIOx, motor->direction1_GPIO_Pin,
-                  speed >= 0 ? Bit_RESET : Bit_SET);
-    GPIO_WriteBit(motor->direction2_GPIOx, motor->direction2_GPIO_Pin,
-                  speed >= 0 ? Bit_SET : Bit_RESET);
+    GPIO_WriteBit(motor->IN1_GPIOx, motor->IN1_GPIO_Pin,
+                  speed >= 0 ? motor->set_Mode : !motor->set_Mode);
+    GPIO_WriteBit(motor->IN2_GPIOx, motor->IN2_GPIO_Pin,
+                  speed >= 0 ? !motor->set_Mode : motor->set_Mode);
     motor->TIM_SetCompare(motor->TIMx, (uint16_t)(speed >= 0 ? speed : -speed));
 }

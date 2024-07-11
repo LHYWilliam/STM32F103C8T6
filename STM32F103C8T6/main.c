@@ -17,11 +17,6 @@
 #include "serial.h"
 #include "tim.h"
 
-#define MPU6050_DEVICE_ADDRESS ((uint8_t)0x68)
-
-float speedGoal = 0.;
-float turnGoal = 0.;
-
 // #define STAND_KP 800.f * 0.6
 // #define STAND_KD -3.5f * 0.6
 // #define SPEED_KP 300.f
@@ -48,39 +43,39 @@ I2C i2c = {
 };
 
 MPU mpu = {
-    .DeviceAddress = MPU6050_DEVICE_ADDRESS,
+    .DeviceAddress = 0x68,
 };
 
 Motor motor_left = {
-    .pwm = "A11",
-    .direction1 = "B12",
-    .direction2 = "B13",
+    .PWM = "A11",
+    .IN1 = "B12",
+    .IN2 = "B13",
     .TIMx = TIM1,
     .channel = 4,
     .TIM_Init_Mode = ENABLE,
+    .invert = DISABLE,
 };
 
 Motor motor_right = {
-    .pwm = "A8",
-    .direction1 = "B14",
-    .direction2 = "B15",
+    .PWM = "A8",
+    .IN1 = "B14",
+    .IN2 = "B15",
     .TIMx = TIM1,
     .channel = 1,
     .TIM_Init_Mode = DISABLE,
+    .invert = DISABLE,
 };
 
 Encoder encoder_left = {
     .gpio = "A6 | A7",
     .TIMx = TIM3,
-    .TIM_IC1Polarity = TIM_ICPolarity_Rising,
-    .TIM_IC2Polarity = TIM_ICPolarity_Falling,
+    .invert = ENABLE,
 };
 
 Encoder encoder_right = {
     .gpio = "B6 | B7",
     .TIMx = TIM4,
-    .TIM_IC1Polarity = TIM_ICPolarity_Rising,
-    .TIM_IC2Polarity = TIM_ICPolarity_Rising,
+    .invert = DISABLE,
 };
 
 PID stand = {
@@ -106,6 +101,8 @@ Timer timer = {
 I2C *GlobalI2C = &i2c;
 Serial *GlobalSerial = &serial;
 
+float speedGoal = 0.;
+float turnGoal = 0.;
 uint8_t WatchState = DISABLE;
 
 int16_t PID_Stand(PID *pid, float pitch, int16_t ygyro);

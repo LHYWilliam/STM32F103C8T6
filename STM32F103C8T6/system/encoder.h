@@ -2,13 +2,14 @@
 #define __ENCODER_H
 
 #include "stm32f10x.h"
+#include <stdint.h>
 
 typedef struct {
     char gpio[12];
 
     TIM_TypeDef *TIMx;
-    uint16_t TIM_IC1Polarity;
-    uint16_t TIM_IC2Polarity;
+
+    uint8_t invert;
 } Encoder;
 
 void Encoder_Init(Encoder *encoder);
