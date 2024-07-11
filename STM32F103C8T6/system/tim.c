@@ -1,5 +1,8 @@
 #include "stm32f10x.h"
 
+#include <stdlib.h>
+
+#include "interrupt.h"
 #include "tim.h"
 
 void TIM_Init(TIM *tim, ClockSource_Config *config) {
@@ -30,6 +33,27 @@ void TIM_Init(TIM *tim, ClockSource_Config *config) {
         TIM_Cmd(tim->TIMx, ENABLE);
         TIM_ClearFlag(tim->TIMx, TIM_FLAG_Update);
     }
+}
+
+void Timer_Init(Timer *timer) {
+    TIM tim2 = {
+        .RCC_APBxPeriph = RCC_APBxPeriph_TIMx(timer->TIMx),
+        .TIMx = timer->TIMx,
+        .TIM_ClockSource = TIM_InternalClock,
+        .TIM_Prescaler = 7200 - 1,
+        .TIM_Period = timer->ms * 10 - 1,
+        .CMD_Mode = UNCMD,
+    };
+    TIM_Init(&tim2, NULL);
+
+    TIM_Interrupt TIM_interrupt = {
+        .TIMx = timer->TIMx,
+        .NVIC_IRQChannel = TIMx_IRQn(timer->TIMx),
+        .NVIC_PriorityGroup = NVIC_PriorityGroup_2,
+        .NVIC_IRQChannelPreemptionPriority = 0,
+        .NVIC_IRQChannelSubPriority = 2,
+    };
+    TIM_Interrupt_Init(&TIM_interrupt);
 }
 
 void TIM_InternalClock(TIM_TypeDef *TIMx, ClockSource_Config *config) {

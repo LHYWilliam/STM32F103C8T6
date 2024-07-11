@@ -1,5 +1,4 @@
 #include "stm32f10x.h"
-#include "stm32f10x_rcc.h"
 #include "stm32f10x_tim.h"
 #include "stm32f10x_usart.h"
 
@@ -11,7 +10,6 @@
 #include "dmp.h"
 #include "encoder.h"
 #include "i2c.h"
-#include "interrupt.h"
 #include "motor.h"
 #include "mpu.h"
 #include "pid.h"
@@ -92,6 +90,29 @@ Encoder encoder_right = {
     .TIM_IC2Polarity = TIM_ICPolarity_Rising,
 };
 
+PID stand = {
+    .Kp = STAND_KP,
+    .Kd = STAND_KD,
+    .goal = ZERO,
+};
+
+PID speed = {
+    .Kp = SPEED_KP,
+    .Ki = SPEED_KI,
+    .goal = 0,
+};
+
+PID turn = {
+    .Kp = TURN_KP,
+    .Kd = TURN_KD,
+    .goal = 0,
+};
+
+Timer timer = {
+    .TIMx = TIM2,
+    .ms = 5,
+};
+
 I2C *GlobalI2C = &i2c;
 Serial *GlobalSerial = &serial;
 
@@ -141,71 +162,15 @@ int main() {
     Encoder_Init(&encoder_right);
     INFO("encoder_right started\r\n");
 
-    stand = (PID){
-        .KpState = ENABLE,
-        .KiState = DISABLE,
-        .KdState = ENABLE,
-        .Kp = STAND_KP,
-        .Ki = 0,
-        .Kd = STAND_KD,
-        .goal = ZERO,
-    };
+    INFO("starting PID\r\n");
     PID_Init(&stand);
-    speed = (PID){
-        .KpState = ENABLE,
-        .KiState = ENABLE,
-        .KdState = DISABLE,
-        .Kp = SPEED_KP,
-        .Ki = SPEED_KI,
-        .Kd = 0,
-        .goal = 0,
-    };
     PID_Init(&speed);
-    turn = (PID){
-        .KpState = ENABLE,
-        .KiState = DISABLE,
-        .KdState = ENABLE,
-        .Kp = TURN_KP,
-        .Ki = 0,
-        .Kd = TURN_KD,
-        .goal = 0,
-    };
     PID_Init(&turn);
+    INFO("PID started\r\n");
 
-    TIM tim2 = {
-        .RCC_APBxPeriph = RCC_APB1Periph_TIM2,
-        .TIMx = TIM2,
-        .TIM_ClockSource = TIM_InternalClock,
-        .TIM_Prescaler = 7200 - 1,
-        .TIM_Period = 50 - 1,
-        .CMD_Mode = UNCMD,
-    };
-    INFO("starting TIM2\r\n");
-    TIM_Init(&tim2, NULL);
-    INFO("TIM2 started\r\n");
-
-    TIM_Interrupt TIM_interrupt = {
-        .TIMx = TIM2,
-        .NVIC_IRQChannel = TIM2_IRQn,
-        .NVIC_PriorityGroup = NVIC_PriorityGroup_2,
-        .NVIC_IRQChannelPreemptionPriority = 0,
-        .NVIC_IRQChannelSubPriority = 2,
-    };
-    INFO("starting TIM_Interrupt\r\n");
-    TIM_Interrupt_Init(&TIM_interrupt);
-    INFO("TIM_Interrupt started\r\n");
-
-    USART_Interrupt interrupt = {
-        .USARTx = USART3,
-        .USART_IT = USART_IT_RXNE,
-        .NVIC_IRQChannel = USART3_IRQn,
-        .NVIC_PriorityGroup = NVIC_PriorityGroup_2,
-        .NVIC_IRQChannelPreemptionPriority = 2,
-        .NVIC_IRQChannelSubPriority = 0,
-    };
-    INFO("starting USART interrupt\r\n");
-    USART_Interrupt_Init(&interrupt);
-    INFO("USART interrupt started\r\n");
+    INFO("starting timer\r\n");
+    Timer_Init(&timer);
+    INFO("timer started\r\n");
 
     INFO("started successfully\r\n");
 
@@ -401,109 +366,3 @@ void ReceiveHandler(Serial *serial) {
 }
 
 void WatchHandler(Serial *serial) {}
-
-// #include "stm32f10x.h"
-
-// #include <string.h>
-
-// #include "gpio.h"
-// #include "i2c.h"
-// #include "interrupt.h"
-// #include "serial.h"
-// #include "stm32f10x_gpio.h"
-
-// I2C *GlobalI2C;
-// Serial *GlobalSerial;
-
-// void ReceiveHandler(Serial *serial);
-
-// int main() {
-//     RTC_Init();
-
-//     GPIO TX = {
-//         "B10",
-//         GPIO_Mode_AF_PP,
-//     };
-//     GPIO RX = {
-//         "B11",
-//         GPIO_Mode_IPU,
-//     };
-//     USART usart = {
-//         RCC_APB1Periph_USART3,
-//         USART3,
-//         USART_Mode_Tx | USART_Mode_Rx,
-//     };
-//     Serial serial = {
-//         &TX,
-//         &RX,
-//         &usart,
-//     };
-//     GlobalSerial = &serial;
-//     Serial_Init(&serial);
-//     Serial_SendString(
-//         &serial, "\r\n------------------------------------------------\r\n");
-//     INFO("Serial started\r\n");
-
-//     USART_Interrupt interrupt = {
-//         USART3, USART_IT_RXNE, USART3_IRQn, NVIC_PriorityGroup_2, 2, 0,
-//     };
-//     INFO("starting USART interrupt\r\n");
-//     USART_Interrupt_Init(&interrupt);
-//     INFO("USART interrupt started\r\n");
-
-//     INFO("start successfully\r\n");
-
-//     GPIO gpio = {
-//         .GPIOxPiny = "B15 | A0",
-//         .GPIO_Mode = GPIO_Mode_Out_PP,
-//     };
-//     GPIO_Init_(&gpio);
-//     GPIO_WriteBit(gpio.GPIOx, gpio.GPIO_Pin, Bit_SET);
-
-//     for (;;) {
-//     }
-// }
-
-// void USART3_IRQHandler(void) {
-//     if (USART_GetITStatus(USART3, USART_IT_RXNE) == SET) {
-
-//         Serial_Parse(GlobalSerial);
-//         ReceiveHandler(GlobalSerial);
-
-//         USART_ClearITPendingBit(USART3, USART_IT_RXNE);
-//     }
-// }
-
-// void ReceiveHandler(Serial *serial) {
-//     if (serial->RecieveFlag == SET) {
-//         switch (serial->type) {
-//         case Byte:
-//             Serial_SendString(serial, "\r");
-//             INFO("received Byte [%c]\r\n", serial->ByteData);
-
-//             switch (serial->ByteData) {}
-//             break;
-
-//         case HexPack:
-//             break;
-
-//         case StringPack:
-//             INFO("receive command [>%s]\r\n", serial->StringData);
-
-//             char *Head = strtok(serial->StringData, " ");
-//             if (strcmp(Head, "reset") == 0) {
-//                 INFO("call reset succeeeded\r\n");
-//                 NVIC_SystemReset();
-
-//             } else {
-//                 ERROR("unknow command\r\n");
-//             }
-//             break;
-
-//         default:
-//             break;
-//         }
-
-//         Serial_Clear(serial);
-//     }
-// }

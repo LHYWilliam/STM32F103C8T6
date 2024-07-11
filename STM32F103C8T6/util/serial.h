@@ -7,6 +7,12 @@
 
 #include "rtc.h"
 
+#define USARTx_IRQn(x)                                                         \
+    ((x) == USART1   ? USART1_IRQn                                             \
+     : (x) == USART2 ? USART2_IRQn                                             \
+     : (x) == USART3 ? USART3_IRQn                                             \
+                     : NULL)
+
 #define INFO(args...)                                                          \
     do {                                                                       \
         Serial_SendString(GlobalSerial, "[INFO][Time %ds] ", RTC_time_s());    \
