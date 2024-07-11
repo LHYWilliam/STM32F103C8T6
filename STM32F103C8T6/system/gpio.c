@@ -2,7 +2,6 @@
 #include "stm32f10x_gpio.h"
 #include "stm32f10x_rcc.h"
 
-#include <stdlib.h>
 #include <string.h>
 
 #include "gpio.h"

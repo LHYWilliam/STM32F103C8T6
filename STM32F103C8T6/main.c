@@ -18,7 +18,6 @@
 #include "tim.h"
 
 #define MPU6050_DEVICE_ADDRESS ((uint8_t)0x68)
-#define OFFESTADAPT_TIMES ((uint8_t)64)
 
 #define ZERO -0.f
 
@@ -116,13 +115,12 @@ Timer timer = {
 I2C *GlobalI2C = &i2c;
 Serial *GlobalSerial = &serial;
 
-PID stand, speed, turn;
+uint8_t WatchState = DISABLE;
 
 int16_t PID_Stand(PID *pid, float pitch, int16_t ygyro);
 int16_t PID_Speed(PID *pid, int16_t left, int16_t right);
 int16_t PID_Turn(PID *pid, int16_t zgyro);
 
-uint8_t WatchState = DISABLE;
 void ReceiveHandler(Serial *serial);
 void WatchHandler(Serial *serial);
 
