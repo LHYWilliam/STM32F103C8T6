@@ -17,20 +17,6 @@
 #include "serial.h"
 #include "tim.h"
 
-// #define STAND_KP 800.f * 0.6
-// #define STAND_KD -3.5f * 0.6
-// #define SPEED_KP 300.f
-// #define SPEED_KI SPEED_KP / 200
-// #define TURN_KP 0.f
-// #define TURN_KD 0.f
-
-// #define STAND_KP 640.f * 0.6
-// #define STAND_KD -3.4f * 0.6 - 0.2
-// #define SPEED_KP 375.f
-// #define SPEED_KI SPEED_KP / 200
-// #define TURN_KP 0.f
-// #define TURN_KD 0.f
-
 Serial serial = {
     .TX = "B10",
     .RX = "B11",
@@ -80,16 +66,16 @@ Encoder encoder_right = {
 
 PID stand = {
     .Kp = 700. * 0.6,
-    .Kd = -3. * 0.6,
+    .Kd = -3. * 0.6 - 0.2,
 };
 
 PID speed = {
-    .Kp = 250.,
+    .Kp = 275.,
     .Ki = 250. / 200,
 };
 
 PID turn = {
-    .Kp = 0.,
+    .Kp = 25.,
     .Kd = 0.,
 };
 
@@ -101,8 +87,12 @@ Timer timer = {
 I2C *GlobalI2C = &i2c;
 Serial *GlobalSerial = &serial;
 
+float standGoal = 0.;
 float speedGoal = 0.;
 float turnGoal = 0.;
+
+float speedStep = 20.;
+float turnStep = 20.;
 uint8_t WatchState = DISABLE;
 
 int16_t PID_Stand(PID *pid, float pitch, int16_t ygyro);
@@ -210,7 +200,7 @@ void USART3_IRQHandler(void) {
 }
 
 int16_t PID_Stand(PID *pid, float pitch, int16_t ygyro) {
-    return pid->Kp * pitch + pid->Kd * ygyro;
+    return pid->Kp * (pitch - standGoal) + pid->Kd * ygyro;
 }
 
 int16_t PID_Speed(PID *pid, int16_t left, int16_t right) {
@@ -243,19 +233,19 @@ void ReceiveHandler(Serial *serial) {
                 break;
 
             case 0x57:
-                speedGoal = speedGoal < 0 ? 0 : speedGoal + 10;
+                speedGoal = speedGoal < 0 ? 0 : speedGoal + speedStep;
                 break;
 
             case 0x53:
-                speedGoal = speedGoal > 0 ? 0 : speedGoal - 10;
+                speedGoal = speedGoal > 0 ? 0 : speedGoal - speedStep;
                 break;
 
             case 0x41:
-                turnGoal = turnGoal > 0 ? 0 : turnGoal - 10;
+                turnGoal = turnGoal > 0 ? 0 : turnGoal - turnStep;
                 break;
 
             case 0x44:
-                turnGoal = turnGoal < 0 ? 0 : turnGoal + 10;
+                turnGoal = turnGoal < 0 ? 0 : turnGoal + turnStep;
                 break;
             }
             break;
