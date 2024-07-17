@@ -6,6 +6,7 @@
 #include "gpio.h"
 #include "interrupt.h"
 #include "serial.h"
+#include "stm32f10x_usart.h"
 #include "usart.h"
 
 void Serial_Init(Serial *serial) {
@@ -33,15 +34,21 @@ void Serial_Init(Serial *serial) {
     };
     USART_Init_(&usart);
 
-    USART_Interrupt interrupt = {
-        .USARTx = serial->USARTx,
-        .USART_IT = USART_IT_RXNE,
-        .NVIC_IRQChannel = USARTx_IRQn(serial->USARTx),
-        .NVIC_PriorityGroup = NVIC_PriorityGroup_2,
-        .NVIC_IRQChannelPreemptionPriority = 2,
-        .NVIC_IRQChannelSubPriority = 0,
-    };
-    USART_Interrupt_Init(&interrupt);
+    if (serial->Interrupt) {
+        USART_Interrupt interrupt = {
+            .USARTx = serial->USARTx,
+            .USART_IT = USART_IT_RXNE,
+            .NVIC_IRQChannel = USARTx_IRQn(serial->USARTx),
+            .NVIC_PriorityGroup = NVIC_PriorityGroup_2,
+            .NVIC_IRQChannelPreemptionPriority = 2,
+            .NVIC_IRQChannelSubPriority = 0,
+        };
+        USART_Interrupt_Init(&interrupt);
+    }
+
+    if (serial->DMA) {
+        USART_DMACmd(serial->USARTx, USART_DMAReq_Rx, ENABLE);
+    }
 
     serial->count = 0;
     serial->RecieveFlag = RESET;

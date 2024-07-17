@@ -37,6 +37,9 @@ typedef struct {
     char RX[4];
     USART_TypeDef *USARTx;
 
+    uint8_t Interrupt;
+    uint8_t DMA;
+
     uint8_t count;
     uint8_t RecieveFlag;
 

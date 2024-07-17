@@ -36,7 +36,7 @@ void TIM_Init(TIM *tim, ClockSource_Config *config) {
 }
 
 void Timer_Init(Timer *timer) {
-    TIM tim2 = {
+    TIM tim = {
         .RCC_APBxPeriph = RCC_APBxPeriph_TIMx(timer->TIMx),
         .TIMx = timer->TIMx,
         .TIM_ClockSource = TIM_InternalClock,
@@ -44,7 +44,7 @@ void Timer_Init(Timer *timer) {
         .TIM_Period = timer->ms * 10 - 1,
         .CMD_Mode = UNCMD,
     };
-    TIM_Init(&tim2, NULL);
+    TIM_Init(&tim, NULL);
 
     TIM_Interrupt TIM_interrupt = {
         .TIMx = timer->TIMx,
