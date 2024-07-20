@@ -4,9 +4,11 @@
 #include <stdint.h>
 
 #include "delay.h"
+#include "encoder.h"
 #include "i2c.h"
 #include "motor.h"
 #include "oled.h"
+#include "pid.h"
 #include "serial.h"
 #include "tim.h"
 
@@ -36,6 +38,32 @@ Motor motorRight = {
     .channel = 1,
     .TIM_Init_Mode = DISABLE,
     .invert = DISABLE,
+};
+
+Encoder encoderLeft = {
+    .gpio = "A6 | A7",
+    .TIMx = TIM3,
+    .invert = ENABLE,
+};
+
+Encoder encoderRight = {
+    .gpio = "B6 | B7",
+    .TIMx = TIM4,
+    .invert = DISABLE,
+};
+
+PID motorLeftPID = {
+    .Kp = -0.04,
+    .Ki = 0,
+    .Kd = 0,
+    .imax = 0,
+};
+
+PID motorRightPID = {
+    .Kp = -0.04,
+    .Ki = 0,
+    .Kd = 0,
+    .imax = 0,
 };
 
 Timer timer = {
@@ -72,6 +100,9 @@ uint16_t turnTimer = DISABLE;
 uint16_t turnBaseTime = 1000;
 uint16_t turnTime = 0;
 
+int16_t speedLfet = 0, speedRight = 0;
+int16_t leftPIDOut = 0, rightPIDOut = 0;
+
 void Serial_Praser(Serial *serial);
 void Serial_Handler(Serial *serial);
 
@@ -83,6 +114,12 @@ int main() {
 
     Motor_Init(&motorLeft);
     Motor_Init(&motorRight);
+
+    Encoder_Init(&encoderLeft);
+    Encoder_Init(&encoderRight);
+
+    PID_Init(&motorLeftPID);
+    PID_Init(&motorRightPID);
 
     Timer_Init(&timer);
 
@@ -96,6 +133,8 @@ int main() {
 
 void TIM2_IRQHandler(void) {
     if (TIM_GetITStatus(TIM2, TIM_IT_Update) == SET) {
+        speedLfet = Encoder_Get(&encoderLeft);
+        speedRight = Encoder_Get(&encoderRight);
 
         switch (action) {
         case Stop:
@@ -104,14 +143,30 @@ void TIM2_IRQHandler(void) {
             break;
 
         case Advance:
-            Motor_Set(&motorLeft, advanceBaseSpeed + AdvancediffSpeed);
-            Motor_Set(&motorRight, advanceBaseSpeed - AdvancediffSpeed);
+            leftPIDOut = PID_Caculate(
+                &motorLeftPID,
+                speedLfet * 76.5 - (advanceBaseSpeed + AdvancediffSpeed));
+            rightPIDOut = PID_Caculate(
+                &motorRightPID,
+                speedRight * 76.5 - (advanceBaseSpeed - AdvancediffSpeed));
+            LIMIT(leftPIDOut, -7200, 7200);
+            LIMIT(rightPIDOut, -7200, 7200);
+
+            Motor_Set(&motorLeft, leftPIDOut);
+            Motor_Set(&motorRight, rightPIDOut);
             break;
 
         case Turn:
             if (turnTimer) {
-                Motor_Set(&motorLeft, +turnDiffSpeed);
-                Motor_Set(&motorRight, -turnDiffSpeed);
+                leftPIDOut = PID_Caculate(&motorLeftPID,
+                                          speedLfet * 76.5 - (+turnDiffSpeed));
+                rightPIDOut = PID_Caculate(
+                    &motorRightPID, speedRight * 76.5 - (-turnDiffSpeed));
+                LIMIT(leftPIDOut, -7200, 7200);
+                LIMIT(rightPIDOut, -7200, 7200);
+
+                Motor_Set(&motorLeft, leftPIDOut);
+                Motor_Set(&motorRight, rightPIDOut);
 
                 turnTimer += 10;
                 if (turnTimer > turnTime) {
@@ -122,8 +177,15 @@ void TIM2_IRQHandler(void) {
             break;
 
         case Round:
-            Motor_Set(&motorLeft, +turnDiffSpeed);
-            Motor_Set(&motorRight, -turnDiffSpeed);
+            leftPIDOut = PID_Caculate(&motorLeftPID,
+                                      speedLfet * 76.5 - (+turnDiffSpeed));
+            rightPIDOut = PID_Caculate(&motorRightPID,
+                                       speedRight * 76.5 - (-turnDiffSpeed));
+            LIMIT(leftPIDOut, -7200, 7200);
+            LIMIT(rightPIDOut, -7200, 7200);
+
+            Motor_Set(&motorLeft, leftPIDOut);
+            Motor_Set(&motorRight, rightPIDOut);
             break;
         }
 
