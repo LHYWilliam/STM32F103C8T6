@@ -78,6 +78,7 @@ typedef enum {
     Round,
 } ActionType;
 ActionType action = Stop;
+char *actionString[] = {"Stop", "Advance", "Turn", "Round"};
 
 typedef enum {
     Forward,
@@ -86,6 +87,7 @@ typedef enum {
     TurnBack,
 } DirectionType;
 DirectionType direction = Forward;
+char *directionString[] = {"Forward", "TurnLeft", "TurnRight", "TurnBack"};
 
 I2C *GlobalI2C;
 Serial *GlobalSerial = &serial;
@@ -123,11 +125,17 @@ int main() {
 
     Timer_Init(&timer);
 
+    OLED_ShowString(2, 1, "Diff:     ");
+    OLED_ShowString(3, 1, "Left:     ");
+    OLED_ShowString(4, 1, "Right:    ");
     for (;;) {
-        OLED_ShowNum(1, 1, action, 1);
-        OLED_ShowSignedNum(2, 1, AdvancediffSpeed, 5);
-        OLED_ShowSignedNum(3, 1, advanceBaseSpeed + AdvancediffSpeed, 5);
-        OLED_ShowSignedNum(4, 1, advanceBaseSpeed - AdvancediffSpeed, 5);
+        OLED_ShowString(1, 1, "Action:         ");
+        OLED_ShowString(1, 8,
+                        action == Turn ? directionString[direction]
+                                       : actionString[action]);
+        OLED_ShowSignedNum(2, 6, AdvancediffSpeed, 5);
+        OLED_ShowSignedNum(3, 6, leftPIDOut, 5);
+        OLED_ShowSignedNum(4, 7, rightPIDOut, 5);
     }
 }
 
