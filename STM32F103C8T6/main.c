@@ -54,15 +54,15 @@ Encoder encoderRight = {
 };
 
 PID motorLeftPID = {
-    .Kp = -4.5,
-    .Ki = -100,
+    .Kp = -3.5,
+    .Ki = -8,
     .Kd = 0.05,
     .imax = 1024,
 };
 
 PID motorRightPID = {
-    .Kp = -4.5,
-    .Ki = -100,
+    .Kp = -2.5,
+    .Ki = -36,
     .Kd = 0.05,
     .imax = 1024,
 };
