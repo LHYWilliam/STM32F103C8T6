@@ -9,6 +9,7 @@
 #include "motor.h"
 #include "oled.h"
 #include "pid.h"
+#include "rtc.h"
 #include "serial.h"
 #include "tim.h"
 
@@ -53,17 +54,17 @@ Encoder encoderRight = {
 };
 
 PID motorLeftPID = {
-    .Kp = -0.04,
-    .Ki = 0,
-    .Kd = 0,
-    .imax = 0,
+    .Kp = -4.5,
+    .Ki = -100,
+    .Kd = 0.05,
+    .imax = 1024,
 };
 
 PID motorRightPID = {
-    .Kp = -0.04,
-    .Ki = 0,
-    .Kd = 0,
-    .imax = 0,
+    .Kp = -4.5,
+    .Ki = -100,
+    .Kd = 0.05,
+    .imax = 1024,
 };
 
 Timer timer = {
@@ -92,6 +93,8 @@ char *directionString[] = {"Forward", "TurnLeft", "TurnRight", "TurnBack"};
 I2C *GlobalI2C;
 Serial *GlobalSerial = &serial;
 
+float encoderToPWM = 96;
+
 uint16_t advanceBaseSpeed = 1200;
 uint16_t turnBaseSpeed = 1050;
 
@@ -109,6 +112,7 @@ void Serial_Praser(Serial *serial);
 void Serial_Handler(Serial *serial);
 
 int main() {
+    RTC_Init();
     Delay_ms(2500);
     OLED_Init();
 
@@ -129,13 +133,17 @@ int main() {
     OLED_ShowString(3, 1, "Left:     ");
     OLED_ShowString(4, 1, "Right:    ");
     for (;;) {
-        OLED_ShowString(1, 1, "Action:         ");
-        OLED_ShowString(1, 8,
-                        action == Turn ? directionString[direction]
-                                       : actionString[action]);
-        OLED_ShowSignedNum(2, 6, AdvancediffSpeed, 5);
-        OLED_ShowSignedNum(3, 6, leftPIDOut, 5);
-        OLED_ShowSignedNum(4, 7, rightPIDOut, 5);
+        // OLED_ShowString(1, 1, "Action:         ");
+        // OLED_ShowString(1, 8,
+        //                 action == Turn ? directionString[direction]
+        //                                : actionString[action]);
+        // OLED_ShowSignedNum(2, 6, AdvancediffSpeed, 5);
+        // OLED_ShowSignedNum(3, 6, leftPIDOut, 5);
+        // OLED_ShowSignedNum(4, 7, rightPIDOut, 5);
+
+        Serial_SendString(&serial, "%d,%d,%d,%d\n", leftPIDOut, rightPIDOut,
+                          (int16_t)(speedLfet * encoderToPWM),
+                          (int16_t)(speedRight * encoderToPWM));
     }
 }
 
@@ -146,17 +154,19 @@ void TIM2_IRQHandler(void) {
 
         switch (action) {
         case Stop:
-            Motor_Set(&motorLeft, 0);
-            Motor_Set(&motorRight, 0);
+            leftPIDOut = 0, rightPIDOut = 0;
+
+            Motor_Set(&motorLeft, leftPIDOut);
+            Motor_Set(&motorRight, rightPIDOut);
             break;
 
         case Advance:
             leftPIDOut = PID_Caculate(
-                &motorLeftPID,
-                speedLfet * 76.5 - (advanceBaseSpeed + AdvancediffSpeed));
+                &motorLeftPID, speedLfet * encoderToPWM -
+                                   (advanceBaseSpeed + AdvancediffSpeed));
             rightPIDOut = PID_Caculate(
-                &motorRightPID,
-                speedRight * 76.5 - (advanceBaseSpeed - AdvancediffSpeed));
+                &motorRightPID, speedRight * encoderToPWM -
+                                    (advanceBaseSpeed - AdvancediffSpeed));
             LIMIT(leftPIDOut, -7200, 7200);
             LIMIT(rightPIDOut, -7200, 7200);
 
@@ -166,10 +176,11 @@ void TIM2_IRQHandler(void) {
 
         case Turn:
             if (turnTimer) {
-                leftPIDOut = PID_Caculate(&motorLeftPID,
-                                          speedLfet * 76.5 - (+turnDiffSpeed));
-                rightPIDOut = PID_Caculate(
-                    &motorRightPID, speedRight * 76.5 - (-turnDiffSpeed));
+                leftPIDOut = PID_Caculate(
+                    &motorLeftPID, speedLfet * encoderToPWM - (+turnDiffSpeed));
+                rightPIDOut =
+                    PID_Caculate(&motorRightPID,
+                                 speedRight * encoderToPWM - (-turnDiffSpeed));
                 LIMIT(leftPIDOut, -7200, 7200);
                 LIMIT(rightPIDOut, -7200, 7200);
 
@@ -185,10 +196,10 @@ void TIM2_IRQHandler(void) {
             break;
 
         case Round:
-            leftPIDOut = PID_Caculate(&motorLeftPID,
-                                      speedLfet * 76.5 - (+turnDiffSpeed));
-            rightPIDOut = PID_Caculate(&motorRightPID,
-                                       speedRight * 76.5 - (-turnDiffSpeed));
+            leftPIDOut = PID_Caculate(&motorLeftPID, speedLfet * encoderToPWM -
+                                                         (+turnDiffSpeed));
+            rightPIDOut = PID_Caculate(
+                &motorRightPID, speedRight * encoderToPWM - (-turnDiffSpeed));
             LIMIT(leftPIDOut, -7200, 7200);
             LIMIT(rightPIDOut, -7200, 7200);
 
