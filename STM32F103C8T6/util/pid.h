@@ -19,7 +19,7 @@ typedef struct {
     float last_derivative;
     uint32_t last_time;
 
-    float output;
+    uint8_t NaN;
 } PID;
 
 void PID_Init(PID *pid);
