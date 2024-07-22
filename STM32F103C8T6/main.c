@@ -1,7 +1,4 @@
 #include "stm32f10x.h"
-#include "stm32f10x_tim.h"
-
-#include <stdint.h>
 
 #include "delay.h"
 #include "encoder.h"
@@ -56,14 +53,14 @@ Encoder encoderRight = {
 PID motorLeftPID = {
     .Kp = -3.5,
     .Ki = -8,
-    .Kd = 0.05,
+    .Kd = 0,
     .imax = 1024,
 };
 
 PID motorRightPID = {
     .Kp = -2.5,
     .Ki = -36,
-    .Kd = 0.05,
+    .Kd = 0,
     .imax = 1024,
 };
 
@@ -96,7 +93,7 @@ Serial *GlobalSerial = &serial;
 float encoderToPWM = 96;
 
 uint16_t advanceBaseSpeed = 1200;
-uint16_t turnBaseSpeed = 1050;
+uint16_t turnBaseSpeed = 790;
 
 int16_t AdvancediffSpeed = 0;
 int16_t turnDiffSpeed = 0;
@@ -133,17 +130,17 @@ int main() {
     OLED_ShowString(3, 1, "Left:     ");
     OLED_ShowString(4, 1, "Right:    ");
     for (;;) {
-        // OLED_ShowString(1, 1, "Action:         ");
-        // OLED_ShowString(1, 8,
-        //                 action == Turn ? directionString[direction]
-        //                                : actionString[action]);
-        // OLED_ShowSignedNum(2, 6, AdvancediffSpeed, 5);
-        // OLED_ShowSignedNum(3, 6, leftPIDOut, 5);
-        // OLED_ShowSignedNum(4, 7, rightPIDOut, 5);
+        OLED_ShowString(1, 1, "Action:         ");
+        OLED_ShowString(1, 8,
+                        action == Turn ? directionString[direction]
+                                       : actionString[action]);
+        OLED_ShowSignedNum(2, 6, AdvancediffSpeed, 5);
+        OLED_ShowSignedNum(3, 6, leftPIDOut, 5);
+        OLED_ShowSignedNum(4, 7, rightPIDOut, 5);
 
-        Serial_SendString(&serial, "%d,%d,%d,%d\n", leftPIDOut, rightPIDOut,
-                          (int16_t)(speedLfet * encoderToPWM),
-                          (int16_t)(speedRight * encoderToPWM));
+        // Serial_SendString(&serial, "%d,%d,%d,%d\n", leftPIDOut, rightPIDOut,
+        //                   (int16_t)(speedLfet * encoderToPWM),
+        //                   (int16_t)(speedRight * encoderToPWM));
     }
 }
 
