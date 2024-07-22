@@ -1,31 +1,43 @@
 #include "stm32f10x.h"
-#include "stm32f10x_adc.h"
-#include "stm32f10x_rcc.h"
+
+#include <string.h>
 
 #include "adc.h"
+#include "gpio.h"
 
 void ADC_Init_(ADC *adc) {
-    GPIO_Init_(adc->gpio);
+    GPIO gpio = {
+        .GPIO_Mode = GPIO_Mode_AIN,
+    };
+    strcpy(gpio.GPIOxPiny, adc->gpio);
+    GPIO_Init_(&gpio);
 
-    RCC_APB2PeriphClockCmd(adc->RCC_APB2Periph, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADCx(adc->ADCx), ENABLE);
     RCC_ADCCLKConfig(RCC_PCLK2_Div6);
 
-    for (uint8_t i = 0; i < adc->ADC_NbrOfChannel; i++) {
-        ADC_RegularChannelConfig(adc->ADCx, adc->ADC_Channel[i], i + 1,
+    uint8_t NbrOfChannel = 1;
+    char *temp = adc->channel;
+    do {
+        ADC_RegularChannelConfig(adc->ADCx, ADC_Channel_x(temp), NbrOfChannel,
                                  ADC_SampleTime_55Cycles5);
-    }
+    } while ((temp = strchr(temp, '|'), temp) && (temp = temp + 2) &&
+             (NbrOfChannel = NbrOfChannel + 1));
 
     ADC_InitTypeDef ADC_InitTStruct = {
-        ADC_Mode_Independent,
-        adc->ADC_NbrOfChannel > 1 ? ENABLE : DISABLE,
-        adc->ADC_ContinuousConvMode,
-        adc->ADC_ExternalTrigConv,
-        ADC_DataAlign_Right,
-        adc->ADC_NbrOfChannel,
+        .ADC_Mode = ADC_Mode_Independent,
+        .ADC_NbrOfChannel = NbrOfChannel,
+        .ADC_DataAlign = ADC_DataAlign_Right,
+        .ADC_ExternalTrigConv = ADC_ExternalTrigConv_None,
+        .ADC_ContinuousConvMode = ENABLE,
+        .ADC_ScanConvMode = NbrOfChannel > 1 ? ENABLE : DISABLE,
     };
     ADC_Init(adc->ADCx, &ADC_InitTStruct);
+}
 
-    ADC_DMACmd(adc->ADCx, adc->DMA_Mode);
+void ADC_Start(ADC *adc) {
+    if (adc->DMA) {
+        ADC_DMACmd(adc->ADCx, ENABLE);
+    }
 
     ADC_Cmd(adc->ADCx, ENABLE);
 
@@ -35,12 +47,12 @@ void ADC_Init_(ADC *adc) {
     ADC_StartCalibration(adc->ADCx);
     while (ADC_GetCalibrationStatus(adc->ADCx) == SET)
         ;
+
+    ADC_SoftwareStartConvCmd(adc->ADCx, ENABLE);
 }
 
 uint16_t ADC_Get(ADC *adc) {
-
-    while (adc->ADC_ContinuousConvMode == DISABLE &&
-           ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET)
+    while (ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET)
         ;
 
     return ADC_GetConversionValue(adc->ADCx);
