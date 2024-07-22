@@ -1,5 +1,4 @@
 #include "stm32f10x.h"
-#include "stm32f10x_dma.h"
 
 #include <stdlib.h>
 
@@ -15,7 +14,7 @@ void DMA_Init_(DMA *dma) {
                                             : DMA_PeripheralInc_Disable,
 
         .DMA_MemoryBaseAddr = dma->targetAddr,
-        .DMA_MemoryDataSize = DMA_PeripheralDataSize(dma->DataSize),
+        .DMA_MemoryDataSize = DMA_MemoryDataSize(dma->DataSize),
         .DMA_MemoryInc =
             dma->targetInc ? DMA_MemoryInc_Enable : DMA_MemoryInc_Disable,
 
@@ -29,9 +28,6 @@ void DMA_Init_(DMA *dma) {
     dma->DMAy_Channelx = DMAy_Channelx(dma->DMAx, dma->channel);
 
     DMA_Init(dma->DMAy_Channelx, &DMA_InitStruct);
-
-    DMA_Cmd(dma->DMAy_Channelx, ENABLE);
 }
-void DMA_Enable(DMA *dma) { DMA_Cmd(dma->DMAy_Channelx, ENABLE); }
 
-void DMA_Disable(DMA *dma) { DMA_Cmd(dma->DMAy_Channelx, DISABLE); }
+void DMA_Start(DMA *dma) { DMA_Cmd(dma->DMAy_Channelx, ENABLE); }

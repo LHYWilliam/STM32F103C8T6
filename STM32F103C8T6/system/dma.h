@@ -3,8 +3,6 @@
 
 #include "stm32f10x.h"
 
-#include <stdint.h>
-
 #define RCC_AHBPeriph_DMAx(x)                                                  \
     ((x) == DMA1 ? RCC_AHBPeriph_DMA1 : (x) == DMA2 ? RCC_AHBPeriph_DMA2 : NULL)
 
@@ -29,6 +27,12 @@
      : (x) == 32 ? DMA_PeripheralDataSize_Word                                 \
                  : NULL)
 
+#define DMA_MemoryDataSize(x)                                                  \
+    ((x) == 8    ? DMA_MemoryDataSize_Byte                                     \
+     : (x) == 16 ? DMA_MemoryDataSize_HalfWord                                 \
+     : (x) == 32 ? DMA_MemoryDataSize_Word                                     \
+                 : NULL)
+
 typedef struct {
     DMA_TypeDef *DMAx;
     uint8_t channel;
@@ -48,8 +52,6 @@ typedef struct {
 } DMA;
 
 void DMA_Init_(DMA *dma);
-
-void DMA_Enable(DMA *dma);
-void DMA_Disable(DMA *dma);
+void DMA_Start(DMA *dma);
 
 #endif
