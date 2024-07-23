@@ -92,7 +92,7 @@ Serial *GlobalSerial = &serial;
 
 float encoderToPWM = 96;
 
-uint16_t advanceBaseSpeed = 1200;
+uint16_t advanceBaseSpeed = 2048;
 uint16_t turnBaseSpeed = 790;
 
 int16_t AdvancediffSpeed = 0;
