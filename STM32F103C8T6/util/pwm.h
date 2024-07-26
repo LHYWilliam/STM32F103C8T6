@@ -1,9 +1,10 @@
 #ifndef __PWM_H
 #define __PWM_H
 
+#include <stdint.h>
+
 #include "compare.h"
 #include "tim.h"
-#include <stdint.h>
 
 typedef struct {
     TIM *tim;
