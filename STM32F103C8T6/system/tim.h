@@ -2,7 +2,6 @@
 #define __INIT_H
 
 #include "stm32f10x.h"
-#include <stdint.h>
 
 #define UNCMD ((uint8_t)0)
 #define CMD ((uint8_t)1)
