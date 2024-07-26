@@ -7,21 +7,21 @@
 
 void TIM_Init(TIM *tim, ClockSource_Config *config) {
     if (tim->TIMx == TIM1) {
-        RCC_APB2PeriphClockCmd(tim->RCC_APBxPeriph, ENABLE);
+        RCC_APB2PeriphClockCmd(RCC_APBxPeriph_TIMx(tim->TIMx), ENABLE);
     } else {
-        RCC_APB1PeriphClockCmd(tim->RCC_APBxPeriph, ENABLE);
+        RCC_APB1PeriphClockCmd(RCC_APBxPeriph_TIMx(tim->TIMx), ENABLE);
     }
 
-    if (tim->TIM_ClockSource) {
-        tim->TIM_ClockSource(tim->TIMx, config);
+    if (tim->ClockSource) {
+        tim->ClockSource(tim->TIMx, config);
     }
 
     TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStruct = {
-        tim->TIM_Prescaler,
-        TIM_CounterMode_Up,
-        tim->TIM_Period,
-        TIM_CKD_DIV1,
-        0,
+        .TIM_Prescaler = tim->Prescaler,
+        .TIM_Period = tim->Period,
+        .TIM_CounterMode = TIM_CounterMode_Up,
+        .TIM_ClockDivision = TIM_CKD_DIV1,
+        .TIM_RepetitionCounter = 0,
     };
     TIM_TimeBaseInit(tim->TIMx, &TIM_TimeBaseInitStruct);
 
@@ -37,11 +37,10 @@ void TIM_Init(TIM *tim, ClockSource_Config *config) {
 
 void Timer_Init(Timer *timer) {
     TIM tim = {
-        .RCC_APBxPeriph = RCC_APBxPeriph_TIMx(timer->TIMx),
         .TIMx = timer->TIMx,
-        .TIM_ClockSource = TIM_InternalClock,
-        .TIM_Prescaler = 7200 - 1,
-        .TIM_Period = timer->ms * 10 - 1,
+        .ClockSource = TIM_InternalClock,
+        .Prescaler = 7200 - 1,
+        .Period = timer->ms * 10 - 1,
         .CMD_Mode = UNCMD,
     };
     TIM_Init(&tim, NULL);

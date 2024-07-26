@@ -71,7 +71,7 @@
 
 typedef struct {
     char GPIOxPiny[32];
-    GPIOMode_TypeDef GPIO_Mode;
+    GPIOMode_TypeDef Mode;
 
     GPIO_TypeDef *GPIOx;
     uint16_t GPIO_Pin;

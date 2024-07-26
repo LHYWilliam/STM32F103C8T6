@@ -3,8 +3,6 @@
 
 #include "stm32f10x.h"
 
-#include <stdint.h>
-
 #include "rtc.h"
 
 #define USARTx_IRQn(x)                                                         \
