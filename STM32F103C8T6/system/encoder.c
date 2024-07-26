@@ -18,11 +18,10 @@ void Encoder_Init(Encoder *encoder) {
     GPIO_Init_(&gpio);
 
     TIM tim = {
-        .RCC_APBxPeriph = RCC_APBxPeriph_TIMx(encoder->TIMx),
         .TIMx = encoder->TIMx,
-        .TIM_ClockSource = NULL,
-        .TIM_Prescaler = 1 - 1,
-        .TIM_Period = 65536 - 1,
+        .ClockSource = NULL,
+        .Prescaler = 1 - 1,
+        .Period = 65536 - 1,
         .CMD_Mode = UNCMD,
     };
     TIM_Init(&tim, NULL);

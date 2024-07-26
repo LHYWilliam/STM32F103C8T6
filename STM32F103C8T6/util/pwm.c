@@ -7,11 +7,10 @@
 void PWM_Init(PWM *pwm) {
     if (pwm->TIM_Init) {
         TIM tim = {
-            .RCC_APBxPeriph = RCC_APBxPeriph_TIMx(pwm->TIMx),
             .TIMx = pwm->TIMx,
-            .TIM_ClockSource = TIM_InternalClock,
-            .TIM_Prescaler = pwm->Prescaler,
-            .TIM_Period = pwm->Period,
+            .ClockSource = TIM_InternalClock,
+            .Prescaler = pwm->Prescaler,
+            .Period = pwm->Period,
             .CMD_Mode = CMD,
         };
         TIM_Init(&tim, NULL);
