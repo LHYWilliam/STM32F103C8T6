@@ -17,8 +17,8 @@ Motor motorLeft = {
     .IN1 = "B12",
     .IN2 = "B13",
     .TIMx = TIM1,
-    .channel = 4,
-    .TIM_Init_Mode = ENABLE,
+    .channel = "4",
+    .TIM_Init = ENABLE,
     .invert = DISABLE,
 };
 
@@ -27,8 +27,8 @@ Motor motorRight = {
     .IN1 = "B14",
     .IN2 = "B15",
     .TIMx = TIM1,
-    .channel = 1,
-    .TIM_Init_Mode = DISABLE,
+    .channel = "1",
+    .TIM_Init = DISABLE,
     .invert = DISABLE,
 };
 
