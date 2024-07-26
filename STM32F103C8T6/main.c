@@ -44,8 +44,6 @@ Encoder encoderRight = {
     .invert = DISABLE,
 };
 
-uint16_t infraredValue[3];
-
 ADC adc = {
     .ADCx = ADC1,
     .gpio = "A0 | A1 | A2",
@@ -53,6 +51,7 @@ ADC adc = {
     .DMA = ENABLE,
 };
 
+uint16_t infraredValue[3];
 DMA dma = {
     .DMAx = DMA1,
     .channel = 1,
@@ -107,7 +106,7 @@ typedef enum {
     Turn,
     Round,
 } ActionType;
-ActionType action = Advance;
+ActionType action = Stop;
 char *actionString[] = {"Stop", "Advance", "Turn", "Round"};
 
 typedef enum {
@@ -116,35 +115,35 @@ typedef enum {
     TurnRight,
     TurnBack,
 } DirectionType;
-DirectionType direction = Forward;
+DirectionType direction = TurnRight;
 char *directionString[] = {"Forward", "TurnLeft", "TurnRight", "TurnBack"};
 
 typedef enum {
-    NoCross,
-    InCross,
-    PassCross,
+    OffLine = 3200,
+    OnLine = 3800,
+    OnCross,
 } CrossType;
-CrossType cross = NoCross;
+CrossType line = OffLine;
 char *crossString[] = {"NoCross", "InCross", "PassCross"};
 
 I2C *GlobalI2C;
 Serial *GlobalSerial;
 
-float encoderToPWM = 96;
-
-uint16_t advanceBaseSpeed = 2048;
-uint16_t turnBaseSpeed = 790;
-
-int16_t AdvancediffSpeed = 0;
-int16_t turnDiffSpeed = 0;
-
-uint16_t turnTimer = DISABLE;
-uint16_t turnBaseTime = 1000;
-uint16_t turnTime = 0;
-
+uint16_t infraredMax = 3850, infraredMaxCenter = 3200;
 int16_t infraredLeft = 0, infraredCenter = 0, infraredRight = 0;
 int16_t tracePIDError = 0;
-uint16_t infraredMax = 3850, infraredMaxCenter = 3200;
+
+float encoderToPWM = 96;
+
+int16_t AdvancediffSpeed = 0;
+uint16_t advanceBaseSpeed = 2048;
+
+int16_t turnDiffSpeed = 0;
+uint16_t turnBaseSpeed = 790;
+
+uint16_t turnTime = 0;
+uint16_t turnBaseTime = 1000;
+uint16_t turnTimer = DISABLE;
 
 int16_t speedLfet = 0, speedRight = 0;
 int16_t leftPIDOut = 0, rightPIDOut = 0;
@@ -218,26 +217,69 @@ void TIM2_IRQHandler(void) {
         speedLfet = Encoder_Get(&encoderLeft);
         speedRight = Encoder_Get(&encoderRight);
 
-        if (cross == NoCross && infraredLeft > 3900 && infraredCenter > 3900 &&
-            infraredRight > 3900) {
-            cross = InCross;
-        } else if (cross == InCross &&
-                   (infraredLeft < 3900 || infraredCenter < 3900 ||
-                    infraredRight < 3900)) {
-            cross = PassCross;
-        }
+        switch (line) {
+        case OffLine:
+            if (infraredLeft > OnLine || infraredCenter > OnLine ||
+                infraredRight > OnLine) {
+                line = OnLine;
+                action = Advance;
+            }
+            break;
 
-        if (cross == PassCross && action != Turn) {
-            action = Turn;
-            direction = TurnRight;
-            turnDiffSpeed = turnBaseSpeed;
-            turnTime = turnBaseTime;
-            turnTimer = ENABLE;
+        case OnLine:
+            if (infraredLeft < OffLine && infraredCenter < OffLine &&
+                infraredRight < OffLine) {
+                line = OffLine;
+                action = Round;
+            }
+            if (infraredLeft > OnLine && infraredCenter > OnLine &&
+                infraredRight > OnLine) {
+                if (direction != Forward) {
+                    line = OnCross;
+                    action = Turn;
+                }
+            }
+            break;
+
+        case OnCross:
+            if (turnTimer == DISABLE) {
+                switch (direction) {
+                case TurnLeft:
+                    turnDiffSpeed = -turnBaseSpeed;
+                    turnTime = turnBaseTime;
+                    break;
+
+                case TurnRight:
+                    turnDiffSpeed = turnBaseSpeed;
+                    turnTime = turnBaseTime;
+                    break;
+
+                case TurnBack:
+                    turnDiffSpeed = turnBaseSpeed;
+                    turnTime = 2 * turnBaseTime;
+                    break;
+                default:
+                    break;
+                }
+                turnTimer = ENABLE;
+            }
+            if (turnTimer > turnTime) {
+                line = OnLine;
+                action = Advance;
+                turnTimer = DISABLE;
+            }
+            break;
+
+        default:
+            break;
         }
 
         switch (action) {
         case Stop:
-            leftPIDOut = 0, rightPIDOut = 0;
+            leftPIDOut =
+                PID_Caculate(&motorLeftPID, speedLfet * encoderToPWM - 0);
+            rightPIDOut =
+                PID_Caculate(&motorRightPID, speedRight * encoderToPWM - 0);
 
             Motor_Set(&motorLeft, leftPIDOut);
             Motor_Set(&motorRight, rightPIDOut);
@@ -253,7 +295,6 @@ void TIM2_IRQHandler(void) {
                 tracePIDError =
                     infraredLeft - (2 * infraredMax - infraredRight);
             }
-
             AdvancediffSpeed = PID_Caculate(&tracePID, tracePIDError);
 
             leftPIDOut = PID_Caculate(
@@ -283,11 +324,6 @@ void TIM2_IRQHandler(void) {
                 Motor_Set(&motorRight, 512 + rightPIDOut);
 
                 turnTimer += 10;
-                if (turnTimer > turnTime) {
-                    action = Advance;
-                    cross = NoCross;
-                    turnTimer = DISABLE;
-                }
             }
             break;
 
