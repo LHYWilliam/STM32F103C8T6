@@ -5,15 +5,17 @@
 #include "tim.h"
 
 void PWM_Init(PWM *pwm) {
-    TIM tim = {
-        .RCC_APBxPeriph = RCC_APBxPeriph_TIMx(pwm->TIMx),
-        .TIMx = pwm->TIMx,
-        .TIM_ClockSource = TIM_InternalClock,
-        .TIM_Prescaler = pwm->Prescaler,
-        .TIM_Period = pwm->Period,
-        .CMD_Mode = CMD,
-    };
-    TIM_Init(&tim, NULL);
+    if (pwm->TIM_Init) {
+        TIM tim = {
+            .RCC_APBxPeriph = RCC_APBxPeriph_TIMx(pwm->TIMx),
+            .TIMx = pwm->TIMx,
+            .TIM_ClockSource = TIM_InternalClock,
+            .TIM_Prescaler = pwm->Prescaler,
+            .TIM_Period = pwm->Period,
+            .CMD_Mode = CMD,
+        };
+        TIM_Init(&tim, NULL);
+    }
 
     uint8_t count = 0;
     char *temp = pwm->channel;

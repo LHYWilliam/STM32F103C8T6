@@ -7,7 +7,7 @@
 
 void ADC_Init_(ADC *adc) {
     GPIO gpio = {
-        .GPIO_Mode = GPIO_Mode_AIN,
+        .Mode = GPIO_Mode_AIN,
     };
     strcpy(gpio.GPIOxPiny, adc->gpio);
     GPIO_Init_(&gpio);

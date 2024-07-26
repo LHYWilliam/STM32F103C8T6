@@ -15,9 +15,9 @@ void GPIO_Init_(GPIO *gpio) {
         RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOx(temp), ENABLE);
 
         GPIO_InitTypeDef GPIO_InitStruct = {
-            gpio->GPIO_Pin,
-            GPIO_Speed_50MHz,
-            gpio->GPIO_Mode,
+            .GPIO_Pin = gpio->GPIO_Pin,
+            .GPIO_Speed = GPIO_Speed_50MHz,
+            .GPIO_Mode = gpio->Mode,
         };
         GPIO_Init(gpio->GPIOx, &GPIO_InitStruct);
     } while ((temp = strchr(temp, '|'), temp) && (temp = temp + 2));

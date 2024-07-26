@@ -1,18 +1,17 @@
-#include "stdarg.h"
-#include "stdio.h"
+#include <stdarg.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "gpio.h"
 #include "interrupt.h"
 #include "serial.h"
-#include "stm32f10x_usart.h"
 #include "usart.h"
 
 void Serial_Init(Serial *serial) {
     if (serial->TX[0]) {
         GPIO TX = {
-            .GPIO_Mode = GPIO_Mode_AF_PP,
+            .Mode = GPIO_Mode_AF_PP,
         };
         strcpy(TX.GPIOxPiny, serial->TX);
         GPIO_Init_(&TX);
@@ -20,7 +19,7 @@ void Serial_Init(Serial *serial) {
 
     if (serial->RX[0]) {
         GPIO RX = {
-            .GPIO_Mode = GPIO_Mode_IPU,
+            .Mode = GPIO_Mode_IPU,
         };
         strcpy(RX.GPIOxPiny, serial->RX);
         GPIO_Init_(&RX);

@@ -12,7 +12,7 @@
 
 void Encoder_Init(Encoder *encoder) {
     GPIO gpio = {
-        .GPIO_Mode = GPIO_Mode_IPU,
+        .Mode = GPIO_Mode_IPU,
     };
     strcpy(gpio.GPIOxPiny, encoder->gpio);
     GPIO_Init_(&gpio);

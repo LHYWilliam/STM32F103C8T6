@@ -8,6 +8,7 @@ typedef struct {
 
     TIM_TypeDef *TIMx;
     char channel[32];
+    uint8_t TIM_Init;
 
     void (*TIM_SetCompare[2])(TIM_TypeDef *TIMx, uint16_t Compare);
 } Servo;

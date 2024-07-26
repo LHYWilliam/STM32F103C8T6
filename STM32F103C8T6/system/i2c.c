@@ -8,13 +8,13 @@
 
 void I2C_Init_(I2C *i2c) {
     GPIO SCL = {
-        .GPIO_Mode = GPIO_Mode_Out_PP,
+        .Mode = GPIO_Mode_Out_PP,
     };
     strcpy(SCL.GPIOxPiny, i2c->SCL);
     GPIO_Init_(&SCL);
 
     GPIO SDA = {
-        .GPIO_Mode = GPIO_Mode_Out_PP,
+        .Mode = GPIO_Mode_Out_PP,
     };
     strcpy(SDA.GPIOxPiny, i2c->SDA);
     GPIO_Init_(&SDA);

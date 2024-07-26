@@ -11,8 +11,8 @@ typedef struct {
     char IN2[4];
 
     TIM_TypeDef *TIMx;
-    uint8_t channel;
-    uint8_t TIM_Init_Mode;
+    char channel[16];
+    uint8_t TIM_Init;
 
     uint8_t invert;
     BitAction set_Mode;
