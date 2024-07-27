@@ -25,8 +25,6 @@ project:
         - file: system/dma.h
         - file: system/usart.h
         - file: system/usart.c
-        - file: system/i2c.h
-        - file: system/i2c.c
         - file: system/rtc.h
         - file: system/rtc.c
 
@@ -71,6 +69,8 @@ project:
         - file: dmp/inv_mpu_dmp_motion_driver.h
         - file: dmp/inv_mpu.c
         - file: dmp/inv_mpu.h
+        - file: dmp/mpui2c.h
+        - file: dmp/mpui2c.c
 
   # List components to use for your application.
   # A software component is a re-usable unit that may be configurable.

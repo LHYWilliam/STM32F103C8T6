@@ -1,9 +1,7 @@
 #include <stdint.h>
 
-#include "i2c.h"
 #include "mpu.h"
-
-extern I2C *GlobalI2C;
+#include "mpui2c.h"
 
 void MPU_Init(MPU *mpu) {
     const uint8_t PWR_MGMT_1 = 0x01;
@@ -64,9 +62,9 @@ void MPU_GetData(MPU *mpu, int16_t *xacc, int16_t *yacc, int16_t *zacc,
 
 void MPU_Send(MPU *mpu, uint8_t RegisterAddress, const uint8_t *bytes,
               uint8_t length) {
-    I2C_Send(GlobalI2C, mpu->DeviceAddress, RegisterAddress, bytes, length);
+    MPUI2C_Send(mpu->DeviceAddress, RegisterAddress, bytes, length);
 }
 void MPU_Receieve(MPU *mpu, uint8_t RegisterAddress, uint8_t *bytes,
                   uint8_t length) {
-    I2C_Receive(GlobalI2C, mpu->DeviceAddress, RegisterAddress, bytes, length);
+    MPUI2C_Receive(mpu->DeviceAddress, RegisterAddress, bytes, length);
 }
