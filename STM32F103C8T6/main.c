@@ -34,13 +34,13 @@ Motor motorRight = {
 Encoder encoderLeft = {
     .gpio = "A6 | A7",
     .TIMx = TIM3,
-    .invert = ENABLE,
+    .invert = DISABLE,
 };
 
 Encoder encoderRight = {
     .gpio = "B6 | B7",
     .TIMx = TIM4,
-    .invert = DISABLE,
+    .invert = ENABLE,
 };
 
 ADC adc = {
@@ -68,24 +68,24 @@ DMA dma = {
 };
 
 PID tracePID = {
-    .Kp = -1.1,
-    .Ki = -0,
-    .Kd = 0,
+    .Kp = -0.12,
+    .Ki = 0,
+    .Kd = -0.0045,
     .imax = 1024,
 };
 
 PID motorLeftPID = {
-    .Kp = -3.5,
-    .Ki = -8,
+    .Kp = -0.6,
+    .Ki = -10.5,
     .Kd = 0,
-    .imax = 1024,
+    .imax = 2048,
 };
 
 PID motorRightPID = {
-    .Kp = -2.5,
-    .Ki = -36,
+    .Kp = -0.6,
+    .Ki = -10.5,
     .Kd = 0,
-    .imax = 1024,
+    .imax = 2048,
 };
 
 Timer timer = {
@@ -118,8 +118,8 @@ DirectionType direction = TurnRight;
 char *directionString[] = {"Forward", "TurnLeft", "TurnRight", "TurnBack"};
 
 typedef enum {
-    OffLine = 3200,
-    OnLine = 3800,
+    OffLine = 1100,
+    OnLine = 3750,
     OnCross,
 } CrossType;
 CrossType line = OffLine;
@@ -127,17 +127,17 @@ char *crossString[] = {"NoCross", "InCross", "PassCross"};
 
 Serial *GlobalSerial;
 
-uint16_t infraredMax = 3850, infraredMaxCenter = 3200;
+uint16_t infraredMax = 3850, infraredMaxCenter = 2500;
 int16_t infraredLeft = 0, infraredCenter = 0, infraredRight = 0;
 int16_t tracePIDError = 0;
 
-float encoderToPWM = 96;
+float encoderToPWM = 7200. / 140.;
 
 int16_t AdvancediffSpeed = 0;
-uint16_t advanceBaseSpeed = 2048;
+uint16_t advanceBaseSpeed = 1024;
 
 int16_t turnDiffSpeed = 0;
-uint16_t turnBaseSpeed = 790;
+uint16_t turnBaseSpeed = 390;
 
 uint16_t turnTime = 0;
 uint16_t turnBaseTime = 1000;
@@ -177,19 +177,19 @@ int main() {
         //                 action == Turn ? directionString[direction]
         //                                : actionString[action]);
         // OLED_ShowSignedNum(2, 6, AdvancediffSpeed, 5);
-        // OLED_ShowSignedNum(3, 6, leftPIDOut, 5);
-        // OLED_ShowSignedNum(4, 7, rightPIDOut, 5);
+        OLED_ShowSignedNum(3, 6, leftPIDOut, 5);
+        OLED_ShowSignedNum(4, 7, rightPIDOut, 5);
 
         // Serial_SendString(&serial, "%d,%d,%d,%d\n", leftPIDOut, rightPIDOut,
         //                   (int16_t)(speedLfet * encoderToPWM),
         //                   (int16_t)(speedRight * encoderToPWM));
 
-        OLED_ShowString(1, 1, "Left  :     ");
-        OLED_ShowString(2, 1, "Center:     ");
-        OLED_ShowString(3, 1, "Right :    ");
-        OLED_ShowNum(1, 8, infraredValue[0], 4);
-        OLED_ShowNum(2, 8, infraredValue[1], 4);
-        OLED_ShowNum(3, 8, infraredValue[2], 4);
+        // OLED_ShowString(1, 1, "Left  :     ");
+        // OLED_ShowString(2, 1, "Center:     ");
+        // OLED_ShowString(3, 1, "Right :    ");
+        // OLED_ShowNum(1, 8, infraredValue[0], 4);
+        // OLED_ShowNum(2, 8, infraredValue[1], 4);
+        // OLED_ShowNum(3, 8, infraredValue[2], 4);
 
         // OLED_ShowString(1, 1, "LeftMax  :     ");
         // OLED_ShowString(2, 1, "MaxCenter:     ");
@@ -217,8 +217,8 @@ void TIM2_IRQHandler(void) {
 
         switch (line) {
         case OffLine:
-            if (infraredLeft > OnLine || infraredCenter > OnLine ||
-                infraredRight > OnLine) {
+            if (infraredLeft > OffLine || infraredCenter > OffLine ||
+                infraredRight > OffLine) {
                 line = OnLine;
                 action = Advance;
             }
@@ -318,8 +318,8 @@ void TIM2_IRQHandler(void) {
                 LIMIT(leftPIDOut, -7200, 7200);
                 LIMIT(rightPIDOut, -7200, 7200);
 
-                Motor_Set(&motorLeft, 512 + leftPIDOut);
-                Motor_Set(&motorRight, 512 + rightPIDOut);
+                Motor_Set(&motorLeft, 780 + leftPIDOut);
+                Motor_Set(&motorRight, 780 + rightPIDOut);
 
                 turnTimer += 10;
             }
