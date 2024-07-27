@@ -1,8 +1,7 @@
 #include "stm32f10x.h"
 
-#include "adc.h"
-#include "dma.h"
 #include "encoder.h"
+#include "gray.h"
 #include "motor.h"
 #include "oled.h"
 #include "pid.h"
@@ -10,6 +9,7 @@
 #include "serial.h"
 #include "tim.h"
 #include <stdint.h>
+uint32_t count = 0;
 
 Motor motorLeft = {
     .PWM = "A11",
@@ -43,34 +43,12 @@ Encoder encoderRight = {
     .invert = ENABLE,
 };
 
-ADC adc = {
-    .ADCx = ADC1,
-    .gpio = "A0 | A1 | A2",
-    .channel = "0 | 1 | 2",
-    .DMA = ENABLE,
-};
-
-uint16_t infraredValue[3];
-DMA dma = {
-    .DMAx = DMA1,
-    .channel = 1,
-
-    .sourceAddr = (uint32_t)&ADC1->DR,
-    .sourceInc = DISABLE,
-
-    .targetAddr = (uint32_t)infraredValue,
-    .targetInc = ENABLE,
-
-    .DataSize = 16,
-    .BufferSize = 3,
-    .Circular = ENABLE,
-    .M2M = DISABLE,
-};
-
 PID tracePID = {
-    .Kp = -0.12,
+    // .Kp = -0.12,
+    .Kp = -1,
     .Ki = 0,
-    .Kd = -0.0045,
+    // .Kd = -0.0045,
+    .Kd = -0,
     .imax = 1024,
 };
 
@@ -118,8 +96,8 @@ DirectionType direction = TurnRight;
 char *directionString[] = {"Forward", "TurnLeft", "TurnRight", "TurnBack"};
 
 typedef enum {
-    OffLine = 1100,
-    OnLine = 3750,
+    OffLine = 128,
+    OnLine = 32,
     OnCross,
 } CrossType;
 CrossType line = OffLine;
@@ -127,8 +105,7 @@ char *crossString[] = {"NoCross", "InCross", "PassCross"};
 
 Serial *GlobalSerial;
 
-uint16_t infraredMax = 3850, infraredMaxCenter = 2500;
-int16_t infraredLeft = 0, infraredCenter = 0, infraredRight = 0;
+uint8_t grayData[8];
 int16_t tracePIDError = 0;
 
 float encoderToPWM = 7200. / 140.;
@@ -152,6 +129,7 @@ void Serial_Handler(Serial *serial);
 int main() {
     RTC_Init();
     OLED_Init();
+    Gray_Init();
 
     Motor_Init(&motorLeft);
     Motor_Init(&motorRight);
@@ -159,26 +137,29 @@ int main() {
     Encoder_Init(&encoderLeft);
     Encoder_Init(&encoderRight);
 
-    ADC_Init_(&adc);
-    DMA_Init_(&dma);
-    DMA_Start(&dma);
-    ADC_Start(&adc);
-
     PID_Init(&tracePID);
     PID_Init(&motorLeftPID);
     PID_Init(&motorRightPID);
 
     Timer_Init(&timer);
 
-    int16_t leftMax = 0, leftMaxCenter = 0, rightMax = 0, rightMaxCenter = 0;
+    // int16_t leftMax = 0, leftMaxCenter = 0, rightMax = 0, rightMaxCenter = 0;
     for (;;) {
         // OLED_ShowString(1, 1, "Action:         ");
         // OLED_ShowString(1, 8,
         //                 action == Turn ? directionString[direction]
         //                                : actionString[action]);
         // OLED_ShowSignedNum(2, 6, AdvancediffSpeed, 5);
-        OLED_ShowSignedNum(3, 6, leftPIDOut, 5);
-        OLED_ShowSignedNum(4, 7, rightPIDOut, 5);
+        Gray_read(grayData);
+        OLED_ShowSignedNum(1, 1, grayData[0], 4);
+        OLED_ShowSignedNum(2, 1, grayData[1], 4);
+        OLED_ShowSignedNum(3, 1, grayData[2], 4);
+        OLED_ShowSignedNum(4, 1, grayData[3], 4);
+        OLED_ShowSignedNum(1, 6, grayData[4], 4);
+        OLED_ShowSignedNum(2, 6, grayData[5], 4);
+        OLED_ShowSignedNum(3, 6, grayData[6], 4);
+        OLED_ShowNum(4, 1, count, 6);
+        OLED_ShowSignedNum(4, 6, grayData[7], 4);
 
         // Serial_SendString(&serial, "%d,%d,%d,%d\n", leftPIDOut, rightPIDOut,
         //                   (int16_t)(speedLfet * encoderToPWM),
@@ -209,29 +190,26 @@ int main() {
 
 void TIM2_IRQHandler(void) {
     if (TIM_GetITStatus(TIM2, TIM_IT_Update) == SET) {
-        infraredLeft = infraredValue[Left];
-        infraredCenter = infraredValue[Center];
-        infraredRight = infraredValue[Right];
         speedLfet = Encoder_Get(&encoderLeft);
         speedRight = Encoder_Get(&encoderRight);
 
         switch (line) {
         case OffLine:
-            if (infraredLeft > OffLine || infraredCenter > OffLine ||
-                infraredRight > OffLine) {
+            if (grayData[2] < OnLine || grayData[3] < OnLine ||
+                grayData[4] < OnLine || grayData[5] < OnLine) {
                 line = OnLine;
                 action = Advance;
             }
             break;
 
         case OnLine:
-            if (infraredLeft < OffLine && infraredCenter < OffLine &&
-                infraredRight < OffLine) {
+            if (grayData[2] > OffLine && grayData[3] > OffLine &&
+                grayData[4] > OffLine && grayData[5] > OffLine) {
                 line = OffLine;
                 action = Round;
             }
-            if (infraredLeft > OnLine && infraredCenter > OnLine &&
-                infraredRight > OnLine) {
+            if (grayData[2] < OnLine && grayData[3] < OnLine &&
+                grayData[4] < OnLine && grayData[5] < OnLine) {
                 if (direction != Forward) {
                     line = OnCross;
                     action = Turn;
@@ -284,16 +262,9 @@ void TIM2_IRQHandler(void) {
             break;
 
         case Advance:
-            if (infraredCenter > infraredMaxCenter) {
-                tracePIDError = infraredLeft - infraredRight;
-            } else if (infraredLeft > infraredRight) {
-                tracePIDError =
-                    (2 * infraredMax - infraredLeft) - infraredRight;
-            } else if (infraredLeft < infraredRight) {
-                tracePIDError =
-                    infraredLeft - (2 * infraredMax - infraredRight);
-            }
-            AdvancediffSpeed = PID_Caculate(&tracePID, tracePIDError);
+            AdvancediffSpeed =
+                PID_Caculate(&tracePID, grayData[4] - grayData[3] +
+                                            grayData[5] - grayData[2]);
 
             leftPIDOut = PID_Caculate(
                 &motorLeftPID, speedLfet * encoderToPWM -
