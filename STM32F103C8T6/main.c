@@ -3,7 +3,6 @@
 #include "adc.h"
 #include "dma.h"
 #include "encoder.h"
-#include "i2c.h"
 #include "motor.h"
 #include "oled.h"
 #include "pid.h"
@@ -126,7 +125,6 @@ typedef enum {
 CrossType line = OffLine;
 char *crossString[] = {"NoCross", "InCross", "PassCross"};
 
-I2C *GlobalI2C;
 Serial *GlobalSerial;
 
 uint16_t infraredMax = 3850, infraredMaxCenter = 3200;

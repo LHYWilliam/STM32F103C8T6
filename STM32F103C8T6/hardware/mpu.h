@@ -3,8 +3,6 @@
 
 #include <stdint.h>
 
-#include "i2c.h"
-
 #define MPU6050_PWR_MGMT_1 ((uint8_t)0x6B)
 #define MPU6050_PWR_MGMT_2 ((uint8_t)0x6C)
 #define MPU6050_WHO_AM_I ((uint8_t)0x75)
