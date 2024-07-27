@@ -72,6 +72,13 @@ project:
         - file: dmp/mpui2c.h
         - file: dmp/mpui2c.c
 
+    - group: gray
+      files:
+        - file: gray/gray.c
+        - file: gray/gray.h
+        - file: gray/grayi2c.c
+        - file: gray/grayi2c.h
+
   # List components to use for your application.
   # A software component is a re-usable unit that may be configurable.
   components:
