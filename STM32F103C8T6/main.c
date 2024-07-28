@@ -75,15 +75,15 @@ PID tracePID = {
 };
 
 PID motorLeftPID = {
-    .Kp = -0.6,
-    .Ki = -10.5,
+    .Kp = -4.096,
+    .Ki = -81.92,
     .Kd = 0,
     .imax = 2048,
 };
 
 PID motorRightPID = {
-    .Kp = -0.6,
-    .Ki = -10.5,
+    .Kp = -4.096,
+    .Ki = -81.92,
     .Kd = 0,
     .imax = 2048,
 };
@@ -118,8 +118,8 @@ DirectionType direction = TurnRight;
 char *directionString[] = {"Forward", "TurnLeft", "TurnRight", "TurnBack"};
 
 typedef enum {
-    OffLine = 1100,
-    OnLine = 3750,
+    OffLine = 1024,
+    OnLine = 3800,
     OnCross,
 } CrossType;
 CrossType line = OffLine;
@@ -177,19 +177,19 @@ int main() {
         //                 action == Turn ? directionString[direction]
         //                                : actionString[action]);
         // OLED_ShowSignedNum(2, 6, AdvancediffSpeed, 5);
-        OLED_ShowSignedNum(3, 6, leftPIDOut, 5);
-        OLED_ShowSignedNum(4, 7, rightPIDOut, 5);
+        // OLED_ShowSignedNum(3, 6, leftPIDOut, 5);
+        // OLED_ShowSignedNum(4, 7, rightPIDOut, 5);
 
         // Serial_SendString(&serial, "%d,%d,%d,%d\n", leftPIDOut, rightPIDOut,
         //                   (int16_t)(speedLfet * encoderToPWM),
         //                   (int16_t)(speedRight * encoderToPWM));
 
-        // OLED_ShowString(1, 1, "Left  :     ");
-        // OLED_ShowString(2, 1, "Center:     ");
-        // OLED_ShowString(3, 1, "Right :    ");
-        // OLED_ShowNum(1, 8, infraredValue[0], 4);
-        // OLED_ShowNum(2, 8, infraredValue[1], 4);
-        // OLED_ShowNum(3, 8, infraredValue[2], 4);
+        OLED_ShowString(1, 1, "Left  :     ");
+        OLED_ShowString(2, 1, "Center:     ");
+        OLED_ShowString(3, 1, "Right :    ");
+        OLED_ShowNum(1, 8, infraredValue[Left], 4);
+        OLED_ShowNum(2, 8, infraredValue[Center], 4);
+        OLED_ShowNum(3, 8, infraredValue[Right], 4);
 
         // OLED_ShowString(1, 1, "LeftMax  :     ");
         // OLED_ShowString(2, 1, "MaxCenter:     ");
@@ -230,8 +230,8 @@ void TIM2_IRQHandler(void) {
                 line = OffLine;
                 action = Round;
             }
-            if (infraredLeft > OnLine && infraredCenter > OnLine &&
-                infraredRight > OnLine) {
+            if (infraredLeft > OnCross && infraredCenter > OnCross &&
+                infraredRight > OnCross) {
                 if (direction != Forward) {
                     line = OnCross;
                     action = Turn;
@@ -318,8 +318,8 @@ void TIM2_IRQHandler(void) {
                 LIMIT(leftPIDOut, -7200, 7200);
                 LIMIT(rightPIDOut, -7200, 7200);
 
-                Motor_Set(&motorLeft, 780 + leftPIDOut);
-                Motor_Set(&motorRight, 780 + rightPIDOut);
+                Motor_Set(&motorLeft, 3072 + leftPIDOut);
+                Motor_Set(&motorRight, 3072 + rightPIDOut);
 
                 turnTimer += 10;
             }
