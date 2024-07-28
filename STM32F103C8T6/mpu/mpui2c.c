@@ -2,7 +2,7 @@
 #include "delay.h"
 #include "gpio.h"
 
-void MPUI2C_Init_() {
+void MPUI2C_Init() {
     GPIO SCL = {
         .GPIOxPiny = "B8",
         .Mode = GPIO_Mode_Out_PP,

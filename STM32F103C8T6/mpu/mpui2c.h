@@ -25,7 +25,7 @@ typedef struct {
     char SDA[4];
 } I2C;
 
-void MPUI2C_Init_();
+void MPUI2C_Init();
 
 void MPUI2C_Start();
 void MPUI2C_Stop();
