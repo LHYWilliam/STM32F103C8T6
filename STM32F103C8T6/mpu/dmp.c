@@ -4,79 +4,123 @@
 #include <stdlib.h>
 
 #include "dmp.h"
+#include "mpui2c.h"
 #include "serial.h"
 
-// #define DMP_SELFTEST
+// #define DEBUG
+#define DMP_SELFTEST
 
 extern Serial *GlobalSerial;
 
 static signed char gyro_orientation[9] = {-1, 0, 0, 0, -1, 0, 0, 0, 1};
 
 void DMP_Init() {
+    MPUI2C_Init();
+
     int8_t result;
 
     if (result = mpu_init(NULL), result == 0) {
+#ifdef DEBUG
         INFO("mpu_init succeeded\r\n");
+#endif
     } else {
+#ifdef DEBUG
         ERROR("mpu_init failed %d\r\n", result);
+#endif
     }
 
     if (result = mpu_set_sensors(INV_XYZ_GYRO | INV_XYZ_ACCEL), result == 0) {
+#ifdef DEBUG
         INFO("mpu_set_sensors succeeded\r\n");
+#endif
     } else {
+#ifdef DEBUG
         ERROR("mpu_set_sensors failed %d\r\n", result);
+#endif
     }
     if (result = mpu_configure_fifo(INV_XYZ_GYRO | INV_XYZ_ACCEL),
         result == 0) {
+#ifdef DEBUG
         INFO("mpu_configure_fifo succeeded\r\n");
+#endif
     } else {
+#ifdef DEBUG
         ERROR("mpu_configure_fifo failed %d\r\n", result);
+#endif
     }
     if (result = mpu_set_sample_rate(DEFAULT_MPU_HZ), result == 0) {
+#ifdef DEBUG
         INFO("mpu_set_sample_rate succeeded\r\n");
+#endif
     } else {
+#ifdef DEBUG
         ERROR("mpu_set_sample_rate failed %d\r\n", result);
+#endif
     }
 
     if (result = dmp_load_motion_driver_firmware(), result == 0) {
+#ifdef DEBUG
         INFO("dmp_load_motion_driver_firmware succeeded\r\n");
+#endif
     } else {
+#ifdef DEBUG
         ERROR("dmp_load_motion_driver_firmware failed %d\r\n", result);
+#endif
     }
 
     if (result = dmp_set_orientation(
             inv_orientation_matrix_to_scalar(gyro_orientation)),
         result == 0) {
+#ifdef DEBUG
         INFO("dmp_set_orientation succeeded\r\n");
+#endif
     } else {
+#ifdef DEBUG
         ERROR("dmp_set_orientation failed %d\r\n", result);
+#endif
     }
     if (result = dmp_enable_feature(
             DMP_FEATURE_6X_LP_QUAT | DMP_FEATURE_TAP |
             DMP_FEATURE_ANDROID_ORIENT | DMP_FEATURE_SEND_RAW_ACCEL |
             DMP_FEATURE_SEND_CAL_GYRO | DMP_FEATURE_GYRO_CAL),
         result == 0) {
+#ifdef DEBUG
         INFO("dmp_enable_feature succeeded\r\n");
+#endif
     } else {
+#ifdef DEBUG
         ERROR("dmp_enable_feature failed %d\r\n", result);
+#endif
     }
 
     if (result = dmp_set_fifo_rate(DEFAULT_MPU_HZ), result == 0) {
+#ifdef DEBUG
         INFO("dmp_set_fifo_rate succeeded\r\n");
+#endif
     } else {
+#ifdef DEBUG
         ERROR("dmp_set_fifo_rate failed %d\r\n", result);
+#endif
     }
 
 #ifdef DMP_SELFTEST
+#ifdef DEBUG
     INFO("runing self_test\r\n");
+#endif
     run_self_test();
+#ifdef DEBUG
     INFO("self_test finished\r\n");
+#endif
 #endif
 
     if (result = mpu_set_dmp_state(1), result == 0) {
+#ifdef DEBUG
         INFO("mpu_set_dmp_state succeeded\r\n");
+#endif
     } else {
+#ifdef DEBUG
         ERROR("mpu_set_dmp_state failed %d\r\n", result);
+#endif
     }
 }
 
