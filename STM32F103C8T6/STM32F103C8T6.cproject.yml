@@ -41,10 +41,6 @@ project:
         - file: hardware/servo.c
         - file: hardware/motor.h
         - file: hardware/motor.c
-        - file: hardware/mpu.h
-        - file: hardware/mpu.c
-        - file: hardware/dmp.h
-        - file: hardware/dmp.c
 
     - group: util
       files:
@@ -61,16 +57,20 @@ project:
         - file: util/pid.h
         - file: util/pid.c
 
-    - group: dmp
+    - group: mpu
       files:
-        - file: dmp/dmpKey.h
-        - file: dmp/dmpmap.h
-        - file: dmp/inv_mpu_dmp_motion_driver.c
-        - file: dmp/inv_mpu_dmp_motion_driver.h
-        - file: dmp/inv_mpu.c
-        - file: dmp/inv_mpu.h
-        - file: dmp/mpui2c.h
-        - file: dmp/mpui2c.c
+        - file: mpu/dmpKey.h
+        - file: mpu/dmpmap.h
+        - file: mpu/inv_mpu_dmp_motion_driver.c
+        - file: mpu/inv_mpu_dmp_motion_driver.h
+        - file: mpu/inv_mpu.c
+        - file: mpu/inv_mpu.h
+        - file: mpu/mpui2c.h
+        - file: mpu/mpui2c.c
+        - file: mpu/mpu.h
+        - file: mpu/mpu.c
+        - file: mpu/dmp.h
+        - file: mpu/dmp.c
 
     - group: gray
       files:
