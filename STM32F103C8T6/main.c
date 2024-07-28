@@ -75,9 +75,9 @@ DMA dma = {
 };
 
 PID tracePID = {
-    .Kp = -0.12,
+    .Kp = -0.3,
     .Ki = 0,
-    .Kd = -0.0045,
+    .Kd = -0.001,
     .imax = 1024,
 };
 
@@ -122,8 +122,7 @@ typedef enum {
     TurnRight = 0x4,
     TurnBack = 0x8,
 } DirectionType;
-DirectionType direction = NoDirection;
-uint8_t PossibleDirection = NoDirection;
+DirectionType direction = TurnRight;
 char *directionString[] = {"NoDirection", "Forward", "TurnLeft", "TurnRight",
                            "TurnBack"};
 
@@ -131,10 +130,9 @@ typedef enum {
     OffLine,
     OnLine,
     OnCross,
-    PassCross,
 } LineType;
 LineType lineState = OffLine;
-char *lineString[] = {"OffLine", "OnLine", "OnCross", "PassCross"};
+char *lineString[] = {"OffLine", "OnLine", "OnCross"};
 
 Serial *GlobalSerial;
 
@@ -185,7 +183,6 @@ int main() {
         OLED_ShowString(2, 1, "Line:         ");
         OLED_ShowString(2, 8, lineString[lineState]);
 
-        OLED_ShowNum(3, 1, PossibleDirection, 2);
         // Serial_SendString(&serial, "%d,%d,%d\n", infraredValue[Left],
         //                   infraredValue[Center], infraredValue[Right]);
         // OLED_ShowSignedNum(2, 6, AdvancediffSpeed, 5);
@@ -254,35 +251,9 @@ void TIM2_IRQHandler(void) {
             break;
 
         case OnCross:
-            if (infraredLeft > onCrossInfrared &&
-                infraredCenter > onCrossInfrared) {
-                PossibleDirection |= TurnLeft;
-            }
-            if (infraredCenter > onCrossInfrared &&
-                infraredRight > onCrossInfrared) {
-                PossibleDirection |= TurnRight;
-            }
-            if (infraredLeft < onCrossInfrared &&
-                infraredRight < onCrossInfrared) {
-                if (infraredCenter > onLineInfrared) {
-                    PossibleDirection |= Forward;
-                }
-
-                lineState = PassCross;
-                action = Advance;
-            }
-            break;
-
-        case PassCross:
-            while (direction == NoDirection) {
-                direction = (DirectionType)(PossibleDirection &
-                                            (1 << (RTC_time_ms() % 4)));
-            };
-
             if (direction == Forward) {
                 lineState = OnLine;
                 action = Advance;
-                PossibleDirection = NoDirection;
                 break;
             }
 
@@ -306,7 +277,7 @@ void TIM2_IRQHandler(void) {
                 default:
                     break;
                 }
-                lineState = PassCross;
+                lineState = OnCross;
                 action = Turn;
                 turnTimer = ENABLE;
             }
@@ -314,7 +285,6 @@ void TIM2_IRQHandler(void) {
                 lineState = OnLine;
                 action = Advance;
                 turnTimer = DISABLE;
-                PossibleDirection = NoDirection;
             }
             break;
         }
