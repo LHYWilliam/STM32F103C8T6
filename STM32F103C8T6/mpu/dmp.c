@@ -5,12 +5,30 @@
 
 #include "dmp.h"
 #include "mpui2c.h"
-#include "serial.h"
 
 // #define DEBUG
 #define DMP_SELFTEST
 
+#ifdef DEBUG
+
+#include "rtc.h"
+#include "serial.h"
+
 extern Serial *GlobalSerial;
+
+#define INFO(args...)                                                          \
+    do {                                                                       \
+        Serial_SendString(GlobalSerial, "[INFO][Time %ds] ", RTC_time_s());    \
+        Serial_SendString(GlobalSerial, args);                                 \
+    } while (0)
+
+#define ERROR(args...)                                                         \
+    do {                                                                       \
+        Serial_SendString(GlobalSerial, "[ERROR][Time %ds] ", RTC_time_s());   \
+        Serial_SendString(GlobalSerial, args);                                 \
+    } while (0)
+
+#endif
 
 static signed char gyro_orientation[9] = {-1, 0, 0, 0, -1, 0, 0, 0, 1};
 

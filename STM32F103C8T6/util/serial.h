@@ -3,25 +3,11 @@
 
 #include "stm32f10x.h"
 
-#include "rtc.h"
-
 #define USARTx_IRQn(x)                                                         \
     ((x) == USART1   ? USART1_IRQn                                             \
      : (x) == USART2 ? USART2_IRQn                                             \
      : (x) == USART3 ? USART3_IRQn                                             \
                      : NULL)
-
-#define INFO(args...)                                                          \
-    do {                                                                       \
-        Serial_SendString(GlobalSerial, "[INFO][Time %ds] ", RTC_time_s());    \
-        Serial_SendString(GlobalSerial, args);                                 \
-    } while (0)
-
-#define ERROR(args...)                                                         \
-    do {                                                                       \
-        Serial_SendString(GlobalSerial, "[ERROR][Time %ds] ", RTC_time_s());   \
-        Serial_SendString(GlobalSerial, args);                                 \
-    } while (0)
 
 typedef enum {
     None,
